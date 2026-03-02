@@ -94,6 +94,7 @@ const Products = () => {
                         <th>#</th>
                         <th>Tên sản phẩm</th>
                         <th>Danh mục</th>
+                        <th>Hãng</th>
                         <th>Giá</th>
                         <th>Giảm giá</th>
                         <th>Ảnh</th>
@@ -122,6 +123,7 @@ const Products = () => {
                           </td>
 
                           <td>{item?.caterori?.name}</td>
+                          <td>{item?.brand || "---"}</td>
                           <td className="amount">
                             {<FormatPrice price={item.price} />}
                           </td>
@@ -198,7 +200,7 @@ const Products = () => {
           onOk={handleOk}
           onCancel={handleCancel}
 
-          // className="modal fade zoomIn"
+        // className="modal fade zoomIn"
         >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content border-none">

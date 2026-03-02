@@ -241,12 +241,33 @@ const AddProduct = () => {
               </Form.Item>
             </div>
 
+            <div className="grid grid-cols-12 gap-4 mb-2">
+              <div className="text-[1rem] col-span-2 text-right pt-2">
+                Hãng sản xuất
+              </div>
+              <Form.Item
+                className="col-span-4 mb-0"
+                name="brand"
+              >
+                <Input size="large" placeholder="Nhập hãng sản xuất (VD: Thiên Long)" />
+              </Form.Item>
+              <div className="text-[1rem] col-span-2 text-left pt-2">
+                Xuất xứ
+              </div>
+              <Form.Item
+                className="col-span-4 mb-0"
+                name="origin"
+              >
+                <Input size="large" placeholder="Nhập xuất xứ (VD: Việt Nam)" />
+              </Form.Item>
+            </div>
+
             {/* Giá */}
 
             <div className="grid grid-cols-12 gap-4 mb-2">
               <div className="text-[1rem] col-span-2 text-left pt-2">
                 <div className="text-[1rem] col-span-2 text-right pt-2">
-                 Giảm Giá
+                  Giảm Giá
                 </div>
               </div>
               <Form.Item

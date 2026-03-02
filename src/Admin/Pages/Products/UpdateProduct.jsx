@@ -56,9 +56,11 @@ const UpdateProduct = () => {
         price: product.price || "",
         discount: product.discount || "",
         caterori: product.caterori?._id || product.caterori || undefined,
+        brand: product.brand || "",
+        origin: product.origin || "",
         description: product.description || "",
         quantity: product.quantity || "",
-        variants: product.variants ,
+        variants: product.variants,
       });
 
       // Set ảnh từ bumImage (album images)
@@ -286,6 +288,28 @@ const UpdateProduct = () => {
                     label: item.name,
                   }))}
                 />
+              </Form.Item>
+            </div>
+
+            {/* Thương hiệu và Xuất xứ */}
+            <div className="grid grid-cols-12 gap-4 mb-2">
+              <div className="text-[1rem] col-span-2 text-right pt-2">
+                Hãng sản xuất
+              </div>
+              <Form.Item
+                className="col-span-4 mb-0"
+                name="brand"
+              >
+                <Input size="large" placeholder="Nhập hãng sản xuất (VD: Thiên Long)" />
+              </Form.Item>
+              <div className="text-[1rem] col-span-2 text-left pt-2">
+                Xuất xứ
+              </div>
+              <Form.Item
+                className="col-span-4 mb-0"
+                name="origin"
+              >
+                <Input size="large" placeholder="Nhập xuất xứ (VD: Việt Nam)" />
               </Form.Item>
             </div>
 
