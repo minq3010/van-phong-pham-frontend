@@ -111,6 +111,10 @@ export const addUsers = async (data) => {
   const res = await Axios.post(`/addUser`, data);
   return res.data;
 };
+export const forceChangePasswordApi = async (id, data) => {
+  const res = await Axios.patch(`/user/force-change-password/${id}`, data);
+  return res.data;
+};
 export const updateUsers = async (id, data) => {
   const res = await Axios.patch(`/user/${id}`, data);
   return res.data;

@@ -41,17 +41,19 @@ const Customers = () => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm();
 
   const onSubmit = (data) => {
     const userData = {
-      ...data,
-      password: "Abcd@123",
+      username: data.username,
+      email: data.email,
       role: "admin",
     };
     mutate(userData);
     setBlock(false);
+    reset();
   };
 
   // Hàm xử lý khi submit form search
@@ -229,7 +231,7 @@ const Customers = () => {
                     <button
                       type="button"
                       className="btn-close"
-                      onClick={() => setBlock(false)}
+                      onClick={() => { setBlock(false); reset(); }}
                     />
                   </div>
                   <form
@@ -237,6 +239,10 @@ const Customers = () => {
                     onSubmit={handleSubmit(onSubmit)}
                   >
                     <div className="modal-body">
+                      <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
+                        <i className="ri-information-line mr-1" />
+                        Mật khẩu mặc định: <strong>Admin@12345</strong>. Admin sẽ bị bắt buộc đổi mật khẩu khi đăng nhập lần đầu.
+                      </div>
                       <div className="mb-3">
                         <label
                           htmlFor="customername-field"
@@ -265,11 +271,11 @@ const Customers = () => {
                           className="form-control"
                           placeholder="Enter email"
                           {...register("email", {
-                            required: "Please enter a email.",
+                            required: "Vui lòng nhập email.",
                             pattern: {
                               value:
                                 /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i,
-                              message: "Please enter a valid email.",
+                              message: "Email không hợp lệ.",
                             },
                           })}
                         />
@@ -283,7 +289,7 @@ const Customers = () => {
                         <button
                           type="button"
                           className="px-3 py-2 mt-2 rounded-md bg-[#F3F6F9]"
-                          onClick={() => setBlock(false)}
+                          onClick={() => { setBlock(false); reset(); }}
                         >
                           Close
                         </button>

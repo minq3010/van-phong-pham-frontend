@@ -13,4 +13,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Tách vendor lớn thành chunk riêng
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'antd-vendor': ['antd'],
+          'query-vendor': ['react-query'],
+          'chart-vendor': ['apexcharts', 'react-apexcharts'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
 });

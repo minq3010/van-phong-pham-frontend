@@ -4,9 +4,6 @@ import nProgress from "nprogress";
 nProgress.configure({
   showSpinner: false,
   easing: "ease",
-  speed: 600,
-  trickleRate: 0.5,
-  easing: "ease",
   speed: 200,
   trickle: true,
   trickleRate: 0.02,
@@ -14,12 +11,15 @@ nProgress.configure({
 });
 const instance = axios.create({
   baseURL: "http://localhost:8000/api",
+  withCredentials: true,  // gửi cookie (accessToken) theo mỗi request
 });
 
 instance.interceptors.request.use(
   function (config) {
-    const token = JSON?.parse(localStorage.getItem("auth_token"))?.split("|")[1];
-    config.headers["Authorization"] = "Bearer " + token;
+    const token = JSON?.parse(localStorage.getItem("auth_token"));
+    if (token) {
+      config.headers["Authorization"] = "Bearer " + token;
+    }
     nProgress.start();
     return config;
   },
@@ -34,6 +34,7 @@ instance.interceptors.response.use(
     return response;
   },
   function (error) {
+    nProgress.done();
     return Promise.reject(error);
   }
 );

@@ -33,10 +33,15 @@ const Signin = () => {
     mutationFn: (data) => signin(data),
     onSuccess: (user) => {
       queryCline.invalidateQueries(["user"], user.user);
-      message.success("Thành công");
       localStorage.setItem("auth_token", JSON.stringify(user.token));
       localStorage.setItem("user", JSON.stringify(user.user));
-      navigate("/");
+      if (user.mustChangePassword) {
+        message.warning("Đây là lần đăng nhập đầu tiên. Vui lòng đổi mật khẩu mới!");
+        navigate("/force-change-password");
+      } else {
+        message.success("Thành công");
+        navigate("/");
+      }
     },
     onError: (error) => {
       console.log(error);
