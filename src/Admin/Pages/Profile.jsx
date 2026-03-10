@@ -1,5 +1,7 @@
-import { Spin, Tag } from "antd";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Spin, Tag, message } from "antd";
+import { useMutation, useQueryClient } from "react-query";
+import { updateUsers } from "../../Apis/Api";
 
 const roleConfig = {
   manage: { color: "gold", label: "Manager" },
@@ -8,12 +10,55 @@ const roleConfig = {
 };
 
 const Profile = () => {
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem("user"));
-  } catch {
-    user = null;
-  }
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  });
+  const [formValues, setFormValues] = useState({
+    username: "",
+    phone: "",
+    address: "",
+    avatar: "",
+  });
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setFormValues({
+      username: user.username || "",
+      phone: user.phone || "",
+      address: user.address || "",
+      avatar: user.avatar || "",
+    });
+  }, [user]);
+
+  const { mutate: updateProfile, isLoading: isUpdating } = useMutation({
+    mutationFn: (payload) => updateUsers(user._id, payload),
+    onSuccess: (_response, payload) => {
+      const nextUser = {
+        ...user,
+        ...payload,
+      };
+
+      localStorage.setItem("user", JSON.stringify(nextUser));
+      setUser(nextUser);
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+      message.success("Cập nhật hồ sơ thành công");
+    },
+    onError: (error) => {
+      message.error(
+        error?.response?.data?.message || "Không thể cập nhật hồ sơ"
+      );
+    },
+  });
 
   if (!user) {
     return (
@@ -32,6 +77,39 @@ const Profile = () => {
         day: "numeric",
       })
     : "N/A";
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+
+    setFormValues((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setFormValues({
+        username: user.username || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        avatar: user.avatar || "",
+      });
+    }
+
+    setIsEditing((current) => !current);
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    updateProfile({
+      username: formValues.username.trim(),
+      phone: formValues.phone.trim(),
+      address: formValues.address.trim(),
+      avatar: formValues.avatar.trim(),
+    });
+  };
 
   return (
     <div className="px-4 py-4">
@@ -61,14 +139,87 @@ const Profile = () => {
             <span className="text-sm text-gray-500">{user.email}</span>
           </div>
         </div>
-        <Link
-          to={`/profile`}
+        <button
+          type="button"
           className="px-4 py-2 rounded-md bg-[#0AB39C] hover:bg-[#65d7c8] text-white text-sm flex items-center gap-2 mb-1"
+          onClick={handleEditToggle}
         >
           <i className="ri-edit-box-line" />
-          Edit Profile
-        </Link>
+          {isEditing ? "Hủy chỉnh sửa" : "Chỉnh sửa hồ sơ"}
+        </button>
       </div>
+
+      {isEditing && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+          <h5 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+            <i className="ri-edit-2-line text-[#0AB39C]" />
+            Cập nhật thông tin cá nhân
+          </h5>
+          <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleSubmit}>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Username</label>
+              <input
+                type="text"
+                name="username"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-[#0AB39C]"
+                value={formValues.username}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Số điện thoại</label>
+              <input
+                type="text"
+                name="phone"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-[#0AB39C]"
+                value={formValues.phone}
+                onChange={handleInputChange}
+                placeholder="Nhập số điện thoại"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm text-gray-600 mb-1">Địa chỉ</label>
+              <input
+                type="text"
+                name="address"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-[#0AB39C]"
+                value={formValues.address}
+                onChange={handleInputChange}
+                placeholder="Nhập địa chỉ"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm text-gray-600 mb-1">Link ảnh đại diện</label>
+              <input
+                type="url"
+                name="avatar"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:border-[#0AB39C]"
+                value={formValues.avatar}
+                onChange={handleInputChange}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="md:col-span-2 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50"
+                onClick={handleEditToggle}
+                disabled={isUpdating}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-md bg-[#0AB39C] hover:bg-[#65d7c8] text-white disabled:opacity-60"
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Info cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

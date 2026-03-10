@@ -1,15 +1,14 @@
-import { useQuery } from "react-query";
-import { getUserToken } from "../Apis/Api";
+import { getStoredUser, getStoredToken } from "../utils/auth";
 
 const useAuth = () => {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-  const { data, isLoading } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => getUserToken(),
-    enabled: !!token,
-  });
-  return { data, isLoading };
+  const token = typeof window !== "undefined" ? getStoredToken() : null;
+  const data = typeof window !== "undefined" ? getStoredUser() : null;
+
+  return {
+    data,
+    isLoading: false,
+    isAuthenticated: Boolean(token && data),
+  };
 };
 
 export default useAuth;

@@ -6,6 +6,9 @@ import { signin } from "../../Apis/Api.jsx";
 import { message, Spin } from "antd";
 import * as z from "zod";
 import { useState } from "react";
+
+const ALLOWED_ROLES = ["admin", "manage"];
+
 const Signin = () => {
 
   const [showPassword, setShowPassword] = useState(false);
@@ -31,11 +34,27 @@ const Signin = () => {
   });
   const { mutate, isLoading } = useMutation({
     mutationFn: (data) => signin(data),
-    onSuccess: (user) => {
-      queryCline.invalidateQueries(["user"], user.user);
-      localStorage.setItem("auth_token", JSON.stringify(user.token));
-      localStorage.setItem("user", JSON.stringify(user.user));
-      if (user.mustChangePassword) {
+    onSuccess: (response) => {
+      const authenticatedUser = response?.user;
+      const accessToken = response?.token;
+
+      if (!authenticatedUser || !accessToken) {
+        message.error("Phản hồi đăng nhập không hợp lệ");
+        return;
+      }
+
+      queryCline.invalidateQueries(["user"], authenticatedUser);
+      localStorage.setItem("auth_token", JSON.stringify(accessToken));
+      localStorage.setItem("user", JSON.stringify(authenticatedUser));
+
+      if (!ALLOWED_ROLES.includes(authenticatedUser.role)) {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user");
+        message.error("Tài khoản này không có quyền truy cập trang quản trị");
+        return;
+      }
+
+      if (response.mustChangePassword) {
         message.warning("Đây là lần đăng nhập đầu tiên. Vui lòng đổi mật khẩu mới!");
         navigate("/force-change-password");
       } else {
@@ -45,7 +64,7 @@ const Signin = () => {
     },
     onError: (error) => {
       console.log(error);
-      message.error(error.response.data.message);
+      message.error(error?.response?.data?.message || "Đăng nhập thất bại");
     },
   });
   const onSubmit = (data) => {

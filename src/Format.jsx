@@ -1,3 +1,12 @@
+const parseValidDate = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(value);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
 const FormatPrice = ({ price }) => {
   const formatprice = new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -6,19 +15,26 @@ const FormatPrice = ({ price }) => {
   return formatprice;
 };
 const FormatDate = ({ date }) => {
-  const formatDate = new Intl.DateTimeFormat("vi-VN").format(new Date(date));
+  const parsedDate = parseValidDate(date);
+
+  if (!parsedDate) {
+    return "Không có dữ liệu";
+  }
+
+  const formatDate = new Intl.DateTimeFormat("vi-VN").format(parsedDate);
   return formatDate;
 };
 const FormatDateTime = ({ dateString }) => {
-  
-  if (!dateString) return <span>Không có dữ liệu</span>; // Kiểm tra nếu không có dữ liệu
+  const parsedDate = parseValidDate(dateString);
+
+  if (!parsedDate) return <span>Không có dữ liệu</span>;
 
   const formattedDate = new Intl.DateTimeFormat("vi-VN", {
     timeZone: "Asia/Ho_Chi_Minh",
     timeStyle: "medium",
-  }).format(new Date(dateString));
+  }).format(parsedDate);
 
-  return <span>{formattedDate}</span>; // Trả về JSX thay vì chuỗi
+  return <span>{formattedDate}</span>;
 };
 
 export { FormatPrice, FormatDate, FormatDateTime };

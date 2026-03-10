@@ -4,13 +4,24 @@ import { Link } from "react-router-dom";
 import { FormatPrice } from "../../../Format.jsx";
 import { useDeleteProduct, useProduct } from "../../../Hook/useProduct.jsx";
 import Emptys from "../../Ui/Emty.jsx";
+
+const getStoredUser = () => {
+  try {
+    const rawUser = localStorage.getItem("user");
+    return rawUser ? JSON.parse(rawUser) : null;
+  } catch {
+    return null;
+  }
+};
+
 const Products = () => {
-  const dataString = localStorage.getItem("user");
-  const data = JSON.parse(dataString);
+  const data = getStoredUser();
   const { isProducts, products } = useProduct();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [idDelete, setIdDelete] = useState("");
   const { mutate } = useDeleteProduct();
+  const productRows = Array.isArray(products?.data) ? products.data : [];
+
   const showModal = (id) => {
     setIdDelete(id);
     setIsModalOpen(true);
@@ -43,111 +54,132 @@ const Products = () => {
   return (
     <div className="row">
       <div className="col-lg-12">
-        {products?.data.length > 0 ? (
-          <div className="card" id="orderList">
-            <div className="card-header border-0 bg-none">
-              <div className="row align-items-center gy-3">
-                <div className="col-sm pl-2">
-                  <form>
-                    <div className="row g-3">
-                      <div className="col-xxl-5 col-sm-5">
-                        {/* <div className="search-box">
-                          <input
-                            type="text"
-                            className="form-control search"
-                            placeholder="Search for product ..."
-                            onKeyDown={(e) => handleSearch(e)}
-                          />
-                          <i className="ri-search-line search-icon" />
-                        </div> */}
-                      </div>
+        <div className="card" id="orderList">
+          <div className="card-header border-0 bg-none">
+            <div className="row align-items-center gy-3">
+              <div className="col-sm pl-2">
+                <form>
+                  <div className="row g-3">
+                    <div className="col-xxl-5 col-sm-5">
+                      {/* <div className="search-box">
+                        <input
+                          type="text"
+                          className="form-control search"
+                          placeholder="Search for product ..."
+                          onKeyDown={(e) => handleSearch(e)}
+                        />
+                        <i className="ri-search-line search-icon" />
+                      </div> */}
                     </div>
-                    {/*end row*/}
-                  </form>
-                </div>
-                <div className="col-sm-auto">
-                  <div className="d-flex gap-1 flex-wrap">
-                    <Link
-                      to="/addproduct"
-                      type="button"
-                      className="text-white text-[0.9rem] bg-[#03A9F4] px-4 py-2 rounded-md "
-                    >
-                      Add product
-                    </Link>
-                    <button className="btn btn-soft-danger" id="remove-actions">
-                      <i className="ri-delete-bin-2-line" />
-                    </button>
                   </div>
+                </form>
+              </div>
+              <div className="col-sm-auto">
+                <div className="d-flex gap-1 flex-wrap">
+                  <Link
+                    to="/addproduct"
+                    type="button"
+                    className="text-white text-[0.9rem] bg-[#03A9F4] px-4 py-2 rounded-md"
+                  >
+                    Add product
+                  </Link>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="card-body pt-0">
+          <div className="card-body pt-0">
+            {productRows.length > 0 ? (
               <div>
-                <div className="table-responsive table-card mb-1 mt-3 overflow-hidden">
+                <div className="table-responsive table-card mb-1 mt-3 admin-products-table-wrap">
                   <table
-                    className="table table-nowrap align-middle"
+                    className="table table-nowrap align-middle admin-products-table"
                     id="orderTable"
                   >
+                    <colgroup>
+                      <col className="admin-products-col-index" />
+                      <col className="admin-products-col-product" />
+                      <col className="admin-products-col-price" />
+                      <col className="admin-products-col-stock" />
+                      <col className="admin-products-col-owner" />
+                      <col className="admin-products-col-action" />
+                    </colgroup>
                     <thead className="text-muted table-light bg-white">
                       <tr className="text-uppercase ">
-                        <th>#</th>
-                        <th>Tên sản phẩm</th>
-                        <th>Danh mục</th>
-                        <th>Hãng</th>
-                        <th>Giá</th>
-                        <th>Giảm giá</th>
-                        <th>Ảnh</th>
-                        <th>Số lượng</th>
-                        <th>Người tạo</th>
-                        <th>Người cập nhật</th>
-                        <th>Trạng thái</th>
-                        <th>Hành động</th>
+                        <th className="admin-products-head-cell">#</th>
+                        <th className="admin-products-head-cell">Sản phẩm</th>
+                        <th className="admin-products-head-cell">Giá bán</th>
+                        <th className="admin-products-head-cell">Tồn kho</th>
+                        <th className="admin-products-head-cell">Phụ trách</th>
+                        <th className="admin-products-action-cell">Hành động</th>
                       </tr>
                     </thead>
                     <tbody className="list form-check-all">
-                      {products?.data.map((item, index) => (
-                        <tr key={index}>
-                          <td className="id">
+                      {productRows.map((item, index) => (
+                        <tr key={index} className="admin-products-row">
+                          <td className="id admin-products-cell text-center">
                             <div className="fw-medium">{index + 1}</div>
                           </td>
-                          <td className="customer_name">
-                            <Link
-                              to={`/product_detail/${item._id}`}
-                              className="fw-medium "
-                            >
-                              {item.name.length > 30
-                                ? item.name.slice(0, 30) + "..."
-                                : item.name}
-                            </Link>
+                          <td className="admin-products-cell">
+                            <div className="d-flex align-items-center gap-3 min-w-0 admin-products-summary">
+                              <Image
+                                width={72}
+                                height={72}
+                                style={{ objectFit: "cover" }}
+                                src={item.imageUrl}
+                                alt="product"
+                              />
+                              <div className="min-w-0 admin-products-meta">
+                                <Link
+                                  to={`/product_detail/${item._id}`}
+                                  className="fw-semibold d-block admin-products-name"
+                                >
+                                  {item.name}
+                                </Link>
+                                <div className="text-muted small mt-1">
+                                  Danh mục: {item?.caterori?.name || "Chưa cập nhật"}
+                                </div>
+                                <div className="text-muted small">
+                                  Hãng: {item?.brand || "---"}
+                                </div>
+                              </div>
+                            </div>
                           </td>
 
-                          <td>{item?.caterori?.name}</td>
-                          <td>{item?.brand || "---"}</td>
-                          <td className="amount">
-                            {<FormatPrice price={item.price} />}
+                          <td className="admin-products-cell">
+                            <div className="fw-semibold admin-products-price">
+                              <FormatPrice price={item.price} />
+                            </div>
+                            <div className="text-muted small mt-1">
+                              Giảm giá: {item.discount || 0}%
+                            </div>
                           </td>
-                          <td className="amount">{item.discount || 0} %</td>
-                          <td>
-                            <Image
-                              width={100}
-                              style={{ maxHeight: "200px" }}
-                              src={item.imageUrl}
-                              alt="product"
-                            />
-                          </td>
-                          <td>{item.quantity}</td>
-                          <td>{item.createdBy?.username}</td>
-                          <td>{item.updatedBy?.username}</td>
-                          <td className="status">
+
+                          <td className="admin-products-cell">
                             <span
-                              className={`badge ${item.status === true ? "text-green-500" : "text-red-500"} text-uppercase`}
+                              className={`badge ${item.status === true ? "text-green-500" : "text-red-500"} text-uppercase admin-products-status-badge`}
                             >
                               {item.status === true ? "Active" : "Block"}
                             </span>
+                            <div className="fw-semibold mt-2 admin-products-stock-value">{item.quantity}</div>
+                            <div className="text-muted small">Sản phẩm còn lại</div>
                           </td>
-                          <td>
-                            <ul className="list-inline hstack gap-2 mb-0">
+
+                          <td className="admin-products-cell">
+                            <div className="small admin-products-owner">
+                              <div>
+                                <span className="text-muted">Tạo bởi:</span>{" "}
+                                <span className="fw-medium">{item.createdBy?.username || "---"}</span>
+                              </div>
+                              <div className="mt-1">
+                                <span className="text-muted">Cập nhật:</span>{" "}
+                                <span className="fw-medium">{item.updatedBy?.username || "---"}</span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="admin-products-action-cell">
+                            <ul className="list-inline hstack gap-2 mb-0 justify-content-center admin-products-actions">
                               <li
                                 className="list-inline-item"
                                 data-bs-toggle="tooltip"
@@ -171,7 +203,7 @@ const Products = () => {
                                   <i className="ri-pencil-fill fs-16" />
                                 </Link>
                               </li>
-                              {data.role === "manage" && (
+                              {data?.role === "manage" && (
                                 <li className="list-inline-item">
                                   <div
                                     className="text-danger d-inline-block remove-item-btn"
@@ -189,11 +221,11 @@ const Products = () => {
                   </table>
                 </div>
               </div>
-            </div>
+            ) : (
+              <Emptys />
+            )}
           </div>
-        ) : (
-          <Emptys />
-        )}
+        </div>
 
         <Modal
           open={isModalOpen}

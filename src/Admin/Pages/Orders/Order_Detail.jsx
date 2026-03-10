@@ -4,6 +4,10 @@ import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import { FormatDate, FormatDateTime, FormatPrice } from "../../../Format";
 import { UseDetailOrder, useStatusOrderAdmin } from "../../../Hook/useOrder";
+
+const FALLBACK_PRODUCT_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23f1f5f9'/%3E%3Cpath d='M36 78l14-16 10 10 18-24 14 30H36z' fill='%2394a3b8'/%3E%3Ccircle cx='46' cy='42' r='8' fill='%23cbd5e1'/%3E%3C/svg%3E";
+
 const Order_Detail = () => {
   const { id } = useParams();
   const [isOpen, setIsOpen] = useState(false);
@@ -13,7 +17,8 @@ const Order_Detail = () => {
   const [idOpen, setIdOpen] = useState("");
   const [status, setStatus] = useState();
   const { handleSubmit } = useForm();
-  const idAdmin = JSON.parse(localStorage.getItem("user"));
+  const idAdmin = JSON.parse(localStorage.getItem("user") || "null");
+  const orderProducts = Array.isArray(data?.products) ? data.products : [];
   const getOrderSourceMeta = (order) => {
     const source =
       order?.orderSource ||
@@ -40,7 +45,7 @@ const Order_Detail = () => {
   const onSubmitUpdate = () => {
     const value = {
       status,
-      handledBy: idAdmin._id,
+      handledBy: idAdmin?._id,
     };
     mutate({ id: idOpen, data: value });
     if (!isLoadingorder) {
@@ -71,6 +76,18 @@ const Order_Detail = () => {
         size="large"
         className="h-[50vh] mt-[100px] flex items-center justify-center w-full "
       />
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="px-4 py-4">
+        <div className="card">
+          <div className="card-body text-center text-muted py-5">
+            Không tìm thấy thông tin đơn hàng hoặc dữ liệu đơn hàng không hợp lệ.
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -105,43 +122,54 @@ const Order_Detail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {data?.products?.map((item) => (
-                      <tr>
+                    {orderProducts.map((item, index) => {
+                      const productImage =
+                        item?.productId?.imageUrl || FALLBACK_PRODUCT_IMAGE;
+                      const productName = item?.name || "Sản phẩm không xác định";
+                      const productColor = item?.color || "Không có";
+                      const productPrice = Number(item?.priceAfterDis || 0);
+                      const productQuantity = Number(item?.quantity || 0);
+
+                      return (
+                      <tr key={`${item?.productId?._id || item?.name || "order-item"}-${index}`}>
                         <td>
                           <div className="d-flex">
                             <div className="flex-shrink-0 avatar-md bg-light rounded p-1">
                               <img
-                                src={item.productId.imageUrl}
+                                src={productImage}
                                 alt=""
                                 className="img-fluid d-block"
+                                onError={(event) => {
+                                  event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                                }}
                               />
                             </div>
                             <div className="flex-grow-1 ms-3">
                               <h5 className="fs-15">
                                 <div>
-                                  {item.name.length > 20
-                                    ? item.name.slice(0, 40) + "..."
-                                    : item.name}
+                                  {productName.length > 20
+                                    ? productName.slice(0, 40) + "..."
+                                    : productName}
                                   
                                 </div>
-                              Màu sắc : {item.color}
+                              Màu sắc : {productColor}
                               </h5>
                             </div>
                           </div>
                         </td>
                         <td className="text-center">
-                          {<FormatPrice price={item.priceAfterDis} />}
+                          {<FormatPrice price={productPrice} />}
                         </td>
-                        <td className="text-center">{item.quantity}</td>
+                        <td className="text-center">{productQuantity}</td>
                         <td className="fw-medium text-end">
                           {
                             <FormatPrice
-                              price={item.priceAfterDis * item.quantity}
+                              price={productPrice * productQuantity}
                             />
                           }
                         </td>
                       </tr>
-                    ))}
+                    )})}
 
                     <tr className="border-top border-top-dashed">
                       <td colSpan={3} />
@@ -157,7 +185,7 @@ const Order_Detail = () => {
                             <tr className="border-top border-top-dashed">
                               <th scope="row">Tổng :</th>
                               <th className="text-end text-xl">
-                                {<FormatPrice price={data.totalPrice} />}
+                                {<FormatPrice price={Number(data?.totalPrice || 0)} />}
                               </th>
                             </tr>
                           </tbody>
@@ -266,17 +294,17 @@ const Order_Detail = () => {
             </div>
             <div className="card-body">
               <ul className="list-unstyled vstack gap-2 fs-15 mb-0">
-                <li className=" fs-14">Tên người mua : {data.customerName}</li>
+                <li className=" fs-14">Tên người mua : {data.customerName || "Không có"}</li>
                 <li>
                   Nguồn đơn : <span className={`badge ${orderSourceMeta.className}`}>{orderSourceMeta.label}</span>
                 </li>
                 <li>
                   Loại khách hàng : {data.customerType === "wholesale" ? "Khách sỉ / doanh nghiệp" : "Khách lẻ"}
                 </li>
-                <li>Số điện thoại : {data.phone}</li>
+                <li>Số điện thoại : {data.phone || "Không có"}</li>
                 <li>Email : {data.email || "Không có"}</li>
-                <li>Địa chỉ : {data.address}</li>
-                <li>Ghi chú : {data.note}</li>
+                <li>Địa chỉ : {data.address || "Không có"}</li>
+                <li>Ghi chú : {data.note || "Không có"}</li>
                 <li>Ghi chú nguồn đơn : {orderSourceMeta.description}</li>
               </ul>
             </div>

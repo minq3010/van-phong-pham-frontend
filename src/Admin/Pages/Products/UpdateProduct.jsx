@@ -6,6 +6,7 @@ import {
   Spin,
   Switch,
   Upload,
+  Typography,
   message,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
@@ -25,9 +26,47 @@ const beforeUpload = (file) => {
   const isLt2M = file.size / 1024 / 1024 < 2;
   if (!isLt2M) {
     message.error("Ảnh phải nhỏ hơn 2MB!");
-    return false;
+    return Upload.LIST_IGNORE;
   }
-  return true;
+  return false;
+};
+
+const normalizeFileList = (nextFileList) =>
+  nextFileList.map((file) => {
+    if (!file.url && file.originFileObj) {
+      return {
+        ...file,
+        url: URL.createObjectURL(file.originFileObj),
+      };
+    }
+
+    return file;
+  });
+
+const buildUpdateProductFormData = (values, fileList, status, userId) => {
+  const formData = new FormData();
+  const existingImages = fileList
+    .filter((file) => !file.originFileObj && file.url)
+    .map((file) => file.url);
+
+  formData.append("name", values.name);
+  formData.append("caterori", values.caterori);
+  formData.append("brand", values.brand || "");
+  formData.append("origin", values.origin || "");
+  formData.append("discount", values.discount || 0);
+  formData.append("description", values.description);
+  formData.append("status", String(status));
+  formData.append("updatedBy", userId || "");
+  formData.append("variants", JSON.stringify(values.variants || []));
+  formData.append("existingImages", JSON.stringify(existingImages));
+
+  fileList.forEach((file) => {
+    if (file.originFileObj) {
+      formData.append("images", file.originFileObj);
+    }
+  });
+
+  return formData;
 };
 
 const UpdateProduct = () => {
@@ -79,35 +118,38 @@ const UpdateProduct = () => {
     }
   }, [detailProduct, form]);
 
-  const validateFileList = () => {
-    if (fileList.length < 1) {
-      return Promise.reject(new Error("Vui lòng upload ít nhất 1 ảnh"));
-    }
-    if (fileList.length > 5) {
-      return Promise.reject(new Error("Chỉ được upload tối đa 5 ảnh"));
-    }
-    return Promise.resolve();
-  };
-
   const onhandluploadimg = (e) => {
-    let newFileList = [...e.fileList];
-
-    // Nếu upload thành công, cập nhật URL
-    newFileList = newFileList.map((file) => {
-      if (file.response && file.response.secure_url) {
-        file.url = file.response.secure_url;
-      }
-      return file;
-    });
-
-    setFileList(newFileList);
+    setFileList(normalizeFileList([...e.fileList]));
   };
 
   const { mutate, isLoading } = useMutation({
     mutationFn: (data) => updateProduct(id, data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["detailProduct", id] });
+      queryClient.invalidateQueries({ queryKey: ["product", id] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+      if (response?.data) {
+        queryClient.setQueryData(["product", id], response);
+        queryClient.setQueryData(["products"], (previous) => {
+          if (!previous?.data || !Array.isArray(previous.data)) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            data: previous.data.map((item) =>
+              item._id === id
+                ? {
+                    ...item,
+                    ...response.data,
+                  }
+                : item
+            ),
+          };
+        });
+      }
+
       message.success("Cập nhật sản phẩm thành công!");
       navigate("/products");
     },
@@ -120,25 +162,15 @@ const UpdateProduct = () => {
 
   const onSubmit = (values) => {
     if (fileList.length < 1) {
-      message.error("Vui lòng upload ít nhất 1 ảnh sản phẩm!");
-      return;
+      message.warning("Sản phẩm đang được cập nhật mà chưa có ảnh.");
     }
 
-    // Lấy danh sách URL từ fileList
-    const bumImage = fileList
-      .map((file) => file.url || file.response?.secure_url)
-      .filter(Boolean);
-
-    // Ảnh đại diện là ảnh đầu tiên
-    const imageUrl = bumImage[0];
-
-    const productData = {
-      ...values,
-      bumImage: bumImage,
-      imageUrl: imageUrl,
-      status: status,
-      updatedBy: idAdmin._id,
-    };
+    const productData = buildUpdateProductFormData(
+      values,
+      fileList,
+      status,
+      idAdmin?._id
+    );
 
     mutate(productData);
   };
@@ -164,27 +196,13 @@ const UpdateProduct = () => {
             {/* Upload Ảnh */}
             <div className="grid grid-cols-12 mb-4 gap-4">
               <div className="flex gap-1 mb-2 col-span-2 justify-end items-start pt-2">
-                <span className="text-red-500">*</span>
                 <div className="text-[1rem]">Album Ảnh</div>
               </div>
               <div className="col-span-10">
-                <Form.Item
-                  className="col-span-10 mt-4"
-                  rules={[
-                    {
-                      validator: validateFileList,
-                    },
-                  ]}
-                >
+                <Form.Item className="col-span-10 mt-4">
                   <Upload
-                    action={
-                      "https://api.cloudinary.com/v1_1/dkrcsuwbc/image/upload"
-                    }
                     listType="picture-card"
                     fileList={fileList}
-                    data={{
-                      upload_preset: "image1",
-                    }}
                     accept="image/*"
                     beforeUpload={beforeUpload}
                     maxCount={5}
@@ -216,6 +234,9 @@ const UpdateProduct = () => {
                       </button>
                     )}
                   </Upload>
+                  <Typography.Text type="secondary">
+                    Có thể cập nhật sản phẩm mà không cần thêm ảnh. Ảnh mới sẽ được lưu trong thư mục nội bộ của server.
+                  </Typography.Text>
                 </Form.Item>
               </div>
             </div>
@@ -223,7 +244,6 @@ const UpdateProduct = () => {
             {/* Ảnh đại diện (ảnh đầu tiên) */}
             <div className="grid grid-cols-12 mb-4 gap-4">
               <div className="flex gap-1 mb-2 col-span-2 justify-end items-start pt-2">
-                <span className="text-red-500">*</span>
                 <div className="text-[1rem]">Ảnh đại diện</div>
               </div>
               <div className="col-span-10">

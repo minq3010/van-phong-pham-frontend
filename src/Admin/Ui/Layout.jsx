@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import FullScreenButton from "./FullScreen";
 import { message } from "antd";
 import appLogo from "../../assets/images/logo.png";
+import { getStoredUser } from "../../utils/auth";
 
 const Layout = () => {
   const [profile, setProfile] = useState(false);
@@ -102,10 +103,24 @@ const Layout = () => {
 
   const capitalizeFirstLetter = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : "Dashboards";
+  const formatRoleLabel = (role) => {
+    const roleLabels = {
+      admin: "Admin",
+      manage: "Manager",
+      user: "Người dùng",
+    };
+
+    if (!role) {
+      return "Tài khoản";
+    }
+
+    return roleLabels[role] || capitalizeFirstLetter(role);
+  };
 
   const thirdPathSegment = capitalizeFirstLetter(pathname.split("/")[1]);
-  const dataString = localStorage.getItem("user");
-  const data = JSON.parse(dataString || "null");
+  const data = getStoredUser();
+  const roleLabel = formatRoleLabel(data?.role);
+  const displayName = data?.username || "Tài khoản";
   const menuItems = [
     {
       to: "",
@@ -188,6 +203,10 @@ const Layout = () => {
     .filter(Boolean)
     .join(" ");
 
+  if (!data) {
+    return <Navigate to="/signin" replace />;
+  }
+
   return (
     <div>
       <>
@@ -265,10 +284,10 @@ const Layout = () => {
                         />
                         <span className="text-start ms-xl-2">
                           <span className="d-none d-xl-inline-block ms-1 fw-medium user-name-text">
-                            {data.username}
+                            {displayName}
                           </span>
                           <span className="d-none d-xl-block ms-1 fs-12 user-name-sub-text">
-                            Admin
+                            {roleLabel}
                           </span>
                         </span>
                       </span>
@@ -284,7 +303,7 @@ const Layout = () => {
                       }}
                     >
                       <h6 className="dropdown-header">
-                        Welcome {data.username}
+                        Welcome {displayName}
                       </h6>
                       <Link className="dropdown-item" to={"/profile"}>
                         <i className="mdi mdi-account-circle text-muted fs-16 align-middle me-1" />

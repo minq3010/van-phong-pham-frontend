@@ -40,6 +40,7 @@ export const useDeleteProduct = (onSuccessCallback) => {
     mutationFn: (id) => forceDeleteProduct(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       message.success("Product deleted successfully");
       onSuccessCallback?.();
     },

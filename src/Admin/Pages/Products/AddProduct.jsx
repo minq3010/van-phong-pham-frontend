@@ -6,6 +6,7 @@ import {
   Spin,
   Switch,
   Upload,
+  Typography,
   message,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
@@ -24,9 +25,43 @@ const beforeUpload = (file) => {
   const isLt2M = file.size / 1024 / 1024 < 2;
   if (!isLt2M) {
     message.error("Ảnh phải nhỏ hơn 2MB!");
-    return false;
+    return Upload.LIST_IGNORE;
   }
-  return true;
+  return false;
+};
+
+const normalizeFileList = (nextFileList) =>
+  nextFileList.map((file) => {
+    if (!file.url && file.originFileObj) {
+      return {
+        ...file,
+        url: URL.createObjectURL(file.originFileObj),
+      };
+    }
+
+    return file;
+  });
+
+const buildProductFormData = (values, fileList, status, userId) => {
+  const formData = new FormData();
+
+  formData.append("name", values.name);
+  formData.append("caterori", values.caterori);
+  formData.append("brand", values.brand || "");
+  formData.append("origin", values.origin || "");
+  formData.append("discount", values.discount || 0);
+  formData.append("description", values.description);
+  formData.append("status", String(status));
+  formData.append("createdBy", userId || "");
+  formData.append("variants", JSON.stringify(values.variants || []));
+
+  fileList.forEach((file) => {
+    if (file.originFileObj) {
+      formData.append("images", file.originFileObj);
+    }
+  });
+
+  return formData;
 };
 
 const AddProduct = () => {
@@ -34,7 +69,6 @@ const AddProduct = () => {
   const { category, isCategory } = useCategory();
   const idAdmin = JSON.parse(localStorage.getItem("user"));
 
-  const [imageUrl] = useState("");
   const [fileList, setFileList] = useState([]);
 
   const [status, setStatus] = useState(true);
@@ -61,43 +95,22 @@ const AddProduct = () => {
   });
 
   const onSubmit = (values) => {
-    // Kiểm tra ảnh trước khi submit
     if (fileList.length < 1) {
-      message.error("Vui lòng upload ít nhất 1 ảnh sản phẩm!");
-      return;
+      message.warning("Sản phẩm đang được lưu mà chưa có ảnh.");
     }
 
-    const productData = {
-      ...values,
-      imageUrl: fileList[0]?.url || imageUrl || "",
-      caterori: values.caterori,
-      abumImage: fileList.map((item) => item.url).filter(Boolean),
-      status: status,
-      createdBy: idAdmin._id,
-    };
+    const productData = buildProductFormData(
+      values,
+      fileList,
+      status,
+      idAdmin?._id
+    );
 
     mutate(productData);
   };
 
-  const validateFileList = () => {
-    if (fileList.length < 1) {
-      return Promise.reject(new Error("Vui lòng upload ít nhất 1 ảnh"));
-    }
-    return Promise.resolve();
-  };
-
   const onhandluploadimg = (e) => {
-    let newFileList = [...e.fileList];
-
-    // Nếu upload thành công, cập nhật URL
-    newFileList = newFileList.map((file) => {
-      if (file.response) {
-        file.url = file.response.secure_url || file.response.url; // URL trả về từ Cloudinary
-      }
-      return file;
-    });
-
-    setFileList(newFileList);
+    setFileList(normalizeFileList([...e.fileList]));
   };
 
   if (isCategory) {
@@ -128,31 +141,22 @@ const AddProduct = () => {
             {/* Upload Ảnh */}
             <div className="grid grid-cols-12 mb-4 gap-4">
               <div className="flex gap-1 mb-2 col-span-2 justify-end items-start pt-2">
-                <span className="text-red-500">*</span>
                 <div className="text-[1rem]">Abum Ảnh</div>
               </div>
               <div className="col-span-10">
-                <Form.Item
-                  name="abumImage"
-                  className="col-span-10 mt-4"
-                  rules={[
-                    {
-                      validator: validateFileList,
-                    },
-                  ]}
-                >
+                <Form.Item name="abumImage" className="col-span-10 mt-4">
                   <Upload
-                    action={
-                      "https://api.cloudinary.com/v1_1/dkrcsuwbc/image/upload"
-                    }
                     listType="picture-card"
-                    data={{
-                      upload_preset: "image1",
-                    }}
+                    fileList={fileList}
                     accept="image/*"
                     beforeUpload={beforeUpload}
                     maxCount={5}
                     onChange={(e) => onhandluploadimg(e)}
+                    onRemove={(file) => {
+                      setFileList((current) =>
+                        current.filter((item) => item.uid !== file.uid)
+                      );
+                    }}
                   >
                     {fileList.length < 5 && (
                       <button
@@ -169,11 +173,14 @@ const AddProduct = () => {
                             color: "red",
                           }}
                         >
-                          Image {fileList.length} / 5
+                          Ảnh {fileList.length} / 5
                         </div>
                       </button>
                     )}
                   </Upload>
+                  <Typography.Text type="secondary">
+                    Có thể bỏ trống ảnh khi tạo sản phẩm. Ảnh sẽ được lưu trong thư mục nội bộ của server.
+                  </Typography.Text>
                 </Form.Item>
               </div>
             </div>
@@ -190,8 +197,6 @@ const AddProduct = () => {
                     className="avatar-uploader"
                     showUploadList={false}
                     disabled
-                    action="https://api.cloudinary.com/v1_1/dkrcsuwbc/image/upload"
-                    data={{ upload_preset: "image1" }}
                   >
                     {fileList.length >= 1 && fileList[0]?.url && (
                       <img

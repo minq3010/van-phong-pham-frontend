@@ -1,20 +1,18 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation } from "react-query";
 import { message } from "antd";
 import { forceChangePasswordApi } from "../../Apis/Api";
+import { getStoredUser } from "../../utils/auth";
+
+const DEFAULT_AVATAR =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='24' fill='%23dbeafe'/%3E%3Ccircle cx='24' cy='18' r='8' fill='%2360a5fa'/%3E%3Cpath d='M10 40c2.8-7 9-11 14-11s11.2 4 14 11' fill='%2360a5fa'/%3E%3C/svg%3E";
 
 const ForceChangePassword = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ newPassword: "", confirmPassword: "" });
   const [errors, setErrors] = useState({});
-
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem("user"));
-  } catch {
-    user = null;
-  }
+  const user = getStoredUser();
 
   const { mutate, isLoading } = useMutation({
     mutationFn: (data) => forceChangePasswordApi(user._id, data),
@@ -50,6 +48,10 @@ const ForceChangePassword = () => {
     mutate({ newPassword: form.newPassword, confirmPassword: form.confirmPassword });
   };
 
+  if (!user?._id) {
+    return <Navigate to="/signin" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
@@ -71,7 +73,7 @@ const ForceChangePassword = () => {
         {user && (
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-6">
             <img
-              src={user.avatar}
+              src={user.avatar || DEFAULT_AVATAR}
               alt="avatar"
               className="w-10 h-10 rounded-full object-cover"
             />

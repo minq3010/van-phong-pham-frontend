@@ -6,13 +6,17 @@ import {
   useOrderFormOptions,
 } from "../../../Hook/useOrder";
 
+const PHONE_REGEX = /^\d{10}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TAX_CODE_REGEX = /^\d{10}(?:-\d{3})?$/;
+
 const createEmptyItem = () => ({
   productId: "",
   color: "",
   quantity: 1,
 });
 
-const initialFormState = {
+const createInitialFormState = () => ({
   customerName: "",
   phone: "",
   address: "",
@@ -30,17 +34,66 @@ const initialFormState = {
     note: "",
   },
   products: [createEmptyItem()],
+});
+
+const createInitialErrors = () => ({
+  customerName: "",
+  phone: "",
+  address: "",
+  email: "",
+  customerType: "",
+  note: "",
+  payment: "",
+  voucherId: "",
+  invoiceInfo: {
+    companyName: "",
+    taxCode: "",
+    invoiceEmail: "",
+    invoiceAddress: "",
+    note: "",
+  },
+  products: [],
+  productsMessage: "",
+});
+
+const joinControlClassName = (baseClassName, errorMessage) =>
+  `${baseClassName} ${errorMessage ? "is-invalid" : ""}`.trim();
+
+const hasErrorMessages = (errorState) => {
+  if (!errorState) {
+    return false;
+  }
+
+  return Object.values(errorState).some((value) => {
+    if (typeof value === "string") {
+      return Boolean(value);
+    }
+
+    if (Array.isArray(value)) {
+      return value.some((item) => hasErrorMessages(item));
+    }
+
+    if (typeof value === "object") {
+      return hasErrorMessages(value);
+    }
+
+    return false;
+  });
 };
 
 const CreateOrderModal = ({ open, onClose }) => {
   const currentUser = JSON.parse(localStorage.getItem("user") || "null");
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState(createInitialFormState);
+  const [errors, setErrors] = useState(createInitialErrors);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const { products, vouchers, isLoading } = useOrderFormOptions();
   const { mutate, isLoading: isCreating } = useCreateOrderAdmin();
 
   useEffect(() => {
     if (!open) {
-      setFormData(initialFormState);
+      setFormData(createInitialFormState());
+      setErrors(createInitialErrors());
+      setHasSubmitted(false);
     }
   }, [open]);
 
@@ -190,58 +243,140 @@ const CreateOrderModal = ({ open, onClose }) => {
     }));
   };
 
-  const validateForm = () => {
-    if (!formData.customerName.trim()) {
-      return "Tên khách hàng không được để trống";
+  const validateForm = (dataToValidate = formData) => {
+    const nextErrors = createInitialErrors();
+    const trimmedCustomerName = dataToValidate.customerName.trim();
+    const trimmedPhone = dataToValidate.phone.trim();
+    const trimmedAddress = dataToValidate.address.trim();
+    const trimmedEmail = dataToValidate.email.trim();
+    const productCombinationSet = new Set();
+
+    if (!trimmedCustomerName) {
+      nextErrors.customerName = "Vui lòng nhập tên khách hàng.";
+    } else if (trimmedCustomerName.length < 2) {
+      nextErrors.customerName = "Tên khách hàng cần tối thiểu 2 ký tự.";
     }
 
-    if (!formData.phone.trim()) {
-      return "Số điện thoại không được để trống";
+    if (!trimmedPhone) {
+      nextErrors.phone = "Vui lòng nhập số điện thoại.";
+    } else if (!PHONE_REGEX.test(trimmedPhone)) {
+      nextErrors.phone = "Số điện thoại phải gồm đúng 10 chữ số.";
     }
 
-    if (!formData.address.trim()) {
-      return "Địa chỉ không được để trống";
+    if (!trimmedAddress) {
+      nextErrors.address = "Vui lòng nhập địa chỉ giao hàng.";
+    } else if (trimmedAddress.length < 8) {
+      nextErrors.address = "Địa chỉ giao hàng cần chi tiết hơn.";
     }
 
-    if (formData.invoiceRequested) {
-      if (!formData.invoiceInfo.companyName.trim()) {
-        return "Vui lòng nhập tên công ty để xuất hóa đơn";
+    if (!trimmedEmail) {
+      nextErrors.email = "Vui lòng nhập email liên hệ.";
+    } else if (!EMAIL_REGEX.test(trimmedEmail)) {
+      nextErrors.email = "Email liên hệ không đúng định dạng.";
+    }
+
+    nextErrors.products = dataToValidate.products.map((item) => {
+      const lineErrors = {
+        productId: "",
+        color: "",
+        quantity: "",
+      };
+
+      if (!item.productId) {
+        lineErrors.productId = "Chọn sản phẩm cho dòng này.";
       }
 
-      if (!formData.invoiceInfo.taxCode.trim()) {
-        return "Vui lòng nhập mã số thuế để xuất hóa đơn";
+      if (item.productId && !item.color) {
+        lineErrors.color = "Chọn biến thể cho sản phẩm.";
       }
 
-      if (!formData.invoiceInfo.invoiceAddress.trim()) {
-        return "Vui lòng nhập địa chỉ xuất hóa đơn";
+      if (!item.quantity || Number(item.quantity) < 1) {
+        lineErrors.quantity = "Số lượng phải lớn hơn 0.";
       }
-    }
 
-    if (validProducts.length === 0) {
-      return "Vui lòng chọn ít nhất một sản phẩm";
-    }
+      if (item.productId && item.color) {
+        const comboKey = `${item.productId}-${item.color}`;
+        if (productCombinationSet.has(comboKey)) {
+          lineErrors.color = "Sản phẩm và biến thể này đã được chọn ở dòng khác.";
+        } else {
+          productCombinationSet.add(comboKey);
+        }
+      }
 
-    for (const item of validProducts) {
       const { product, variant } = getLinePricing(item);
-      if (!product || !variant) {
-        return "Một trong các sản phẩm chưa có biến thể hợp lệ";
+
+      if (item.productId && !product) {
+        lineErrors.productId = "Sản phẩm đã chọn không còn khả dụng.";
       }
 
-      if (Number(item.quantity) > Number(variant.quantity || 0)) {
-        return `Số lượng vượt quá tồn kho của ${product.name} - ${variant.color}`;
+      if (item.productId && item.color && !variant) {
+        lineErrors.color = "Biến thể đã chọn không còn khả dụng.";
+      }
+
+      if (
+        item.productId &&
+        item.color &&
+        variant &&
+        Number(item.quantity) > Number(variant.quantity || 0)
+      ) {
+        lineErrors.quantity = `Tồn kho tối đa ${variant.quantity} sản phẩm.`;
+      }
+
+      return lineErrors;
+    });
+
+    const hasAtLeastOneCompletedProduct = dataToValidate.products.some(
+      (item) => item.productId && item.color && Number(item.quantity) > 0
+    );
+
+    if (!hasAtLeastOneCompletedProduct) {
+      nextErrors.productsMessage = "Vui lòng chọn ít nhất một sản phẩm hợp lệ.";
+    }
+
+    if (dataToValidate.invoiceRequested) {
+      const trimmedCompanyName = dataToValidate.invoiceInfo.companyName.trim();
+      const trimmedTaxCode = dataToValidate.invoiceInfo.taxCode.trim();
+      const trimmedInvoiceEmail = dataToValidate.invoiceInfo.invoiceEmail.trim();
+      const trimmedInvoiceAddress = dataToValidate.invoiceInfo.invoiceAddress.trim();
+
+      if (!trimmedCompanyName) {
+        nextErrors.invoiceInfo.companyName = "Vui lòng nhập tên công ty / đơn vị.";
+      }
+
+      if (!trimmedTaxCode) {
+        nextErrors.invoiceInfo.taxCode = "Vui lòng nhập mã số thuế.";
+      } else if (!TAX_CODE_REGEX.test(trimmedTaxCode)) {
+        nextErrors.invoiceInfo.taxCode = "Mã số thuế gồm 10 số hoặc 10 số-3 số.";
+      }
+
+      if (!trimmedInvoiceEmail) {
+        nextErrors.invoiceInfo.invoiceEmail = "Vui lòng nhập email nhận hóa đơn.";
+      } else if (!EMAIL_REGEX.test(trimmedInvoiceEmail)) {
+        nextErrors.invoiceInfo.invoiceEmail = "Email nhận hóa đơn không đúng định dạng.";
+      }
+
+      if (!trimmedInvoiceAddress) {
+        nextErrors.invoiceInfo.invoiceAddress = "Vui lòng nhập địa chỉ xuất hóa đơn.";
+      } else if (trimmedInvoiceAddress.length < 8) {
+        nextErrors.invoiceInfo.invoiceAddress = "Địa chỉ xuất hóa đơn cần chi tiết hơn.";
       }
     }
 
-    return null;
+    return nextErrors;
   };
 
+  useEffect(() => {
+    if (hasSubmitted) {
+      setErrors(validateForm(formData));
+    }
+  }, [formData, hasSubmitted]);
+
   const handleSubmit = () => {
-    const validationError = validateForm();
-    if (validationError) {
-      Modal.error({
-        title: "Không thể tạo đơn hàng",
-        content: validationError,
-      });
+    const validationErrors = validateForm(formData);
+    setHasSubmitted(true);
+    setErrors(validationErrors);
+
+    if (hasErrorMessages(validationErrors)) {
       return;
     }
 
@@ -259,11 +394,11 @@ const CreateOrderModal = ({ open, onClose }) => {
       isPaymentSucces: formData.payment !== "COD",
       invoiceRequested: formData.invoiceRequested,
       invoiceInfo: {
-        companyName: formData.invoiceInfo.companyName,
-        taxCode: formData.invoiceInfo.taxCode,
-        invoiceEmail: formData.invoiceInfo.invoiceEmail,
-        invoiceAddress: formData.invoiceInfo.invoiceAddress,
-        note: formData.invoiceInfo.note,
+        companyName: formData.invoiceInfo.companyName.trim(),
+        taxCode: formData.invoiceInfo.taxCode.trim(),
+        invoiceEmail: formData.invoiceInfo.invoiceEmail.trim(),
+        invoiceAddress: formData.invoiceInfo.invoiceAddress.trim(),
+        note: formData.invoiceInfo.note.trim(),
       },
       products: formData.products
         .filter((item) => item.productId && item.color && Number(item.quantity) > 0)
@@ -276,7 +411,9 @@ const CreateOrderModal = ({ open, onClose }) => {
 
     mutate(payload, {
       onSuccess: () => {
-        setFormData(initialFormState);
+        setFormData(createInitialFormState());
+        setErrors(createInitialErrors());
+        setHasSubmitted(false);
         onClose();
       },
     });
@@ -352,15 +489,17 @@ const CreateOrderModal = ({ open, onClose }) => {
                   </div>
                   <div className="admin-order-overview-item">
                     <span>Voucher</span>
-                    <strong>{selectedVoucher ? selectedVoucher.code : "Không"}</strong>
+                    <strong className="admin-order-overview-value-compact">
+                      {selectedVoucher ? selectedVoucher.code : "Không"}
+                    </strong>
                   </div>
                 </div>
 
                 <div className="row g-3">
-                  <div className="col-md-6 col-lg-12">
-                    <label className="form-label">Loại khách hàng</label>
+                  <div className="col-md-6 col-lg-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Loại khách hàng</label>
                     <select
-                      className="form-control"
+                      className={joinControlClassName("form-control admin-order-form-control", errors.customerType)}
                       value={formData.customerType}
                       onChange={(event) => updateFormField("customerType", event.target.value)}
                     >
@@ -369,51 +508,69 @@ const CreateOrderModal = ({ open, onClose }) => {
                     </select>
                   </div>
 
-                  <div className="col-md-6 col-lg-12">
-                    <label className="form-label">Tên khách hàng</label>
+                  <div className="col-md-6 col-lg-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Tên khách hàng</label>
                     <input
-                      className="form-control"
+                      className={joinControlClassName("form-control admin-order-form-control", errors.customerName)}
                       value={formData.customerName}
                       onChange={(event) => updateFormField("customerName", event.target.value)}
                       placeholder="Nhập tên khách hàng"
                     />
+                    {errors.customerName && (
+                      <div className="invalid-feedback d-block admin-order-error-text">{errors.customerName}</div>
+                    )}
                   </div>
 
-                  <div className="col-md-6 col-lg-12">
-                    <label className="form-label">Số điện thoại</label>
+                  <div className="col-md-6 col-lg-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Số điện thoại</label>
                     <input
-                      className="form-control"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      className={joinControlClassName("form-control admin-order-form-control", errors.phone)}
                       value={formData.phone}
                       onChange={(event) => updateFormField("phone", event.target.value)}
                       placeholder="Nhập số điện thoại"
                     />
+                    {errors.phone && (
+                      <div className="invalid-feedback d-block admin-order-error-text">{errors.phone}</div>
+                    )}
                   </div>
 
-                  <div className="col-md-6 col-lg-12">
-                    <label className="form-label">Email liên hệ</label>
+                  <div className="col-md-6 col-lg-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Email liên hệ</label>
                     <input
-                      className="form-control"
+                      type="email"
+                      className={joinControlClassName("form-control admin-order-form-control", errors.email)}
                       value={formData.email}
                       onChange={(event) => updateFormField("email", event.target.value)}
                       placeholder="Nhập email liên hệ"
                     />
+                    {errors.email ? (
+                      <div className="invalid-feedback d-block admin-order-error-text">{errors.email}</div>
+                    ) : (
+                      <div className="form-text admin-order-helper-text">Nhập email để gửi xác nhận và đối soát đơn hàng.</div>
+                    )}
                   </div>
 
-                  <div className="col-12">
-                    <label className="form-label">Địa chỉ giao hàng</label>
+                  <div className="col-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Địa chỉ giao hàng</label>
                     <textarea
-                      className="form-control"
+                      className={joinControlClassName("form-control admin-order-form-control admin-order-textarea", errors.address)}
                       rows={2}
                       value={formData.address}
                       onChange={(event) => updateFormField("address", event.target.value)}
                       placeholder="Nhập địa chỉ giao hàng"
                     />
+                    {errors.address && (
+                      <div className="invalid-feedback d-block admin-order-error-text">{errors.address}</div>
+                    )}
                   </div>
 
-                  <div className="col-md-6 col-lg-12">
-                    <label className="form-label">Thanh toán</label>
+                  <div className="col-md-6 col-lg-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Thanh toán</label>
                     <select
-                      className="form-control"
+                      className="form-control admin-order-form-control"
                       value={formData.payment}
                       onChange={(event) => updateFormField("payment", event.target.value)}
                     >
@@ -425,10 +582,10 @@ const CreateOrderModal = ({ open, onClose }) => {
                     </select>
                   </div>
 
-                  <div className="col-md-6 col-lg-12">
-                    <label className="form-label">Voucher</label>
+                  <div className="col-md-6 col-lg-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Voucher</label>
                     <select
-                      className="form-control"
+                      className="form-control admin-order-form-control"
                       value={formData.voucherId}
                       onChange={(event) => updateFormField("voucherId", event.target.value)}
                     >
@@ -441,10 +598,10 @@ const CreateOrderModal = ({ open, onClose }) => {
                     </select>
                   </div>
 
-                  <div className="col-12">
-                    <label className="form-label">Ghi chú</label>
+                  <div className="col-12 admin-order-form-group">
+                    <label className="form-label admin-order-form-label">Ghi chú</label>
                     <textarea
-                      className="form-control"
+                      className="form-control admin-order-form-control admin-order-textarea"
                       rows={2}
                       value={formData.note}
                       onChange={(event) => updateFormField("note", event.target.value)}
@@ -471,51 +628,64 @@ const CreateOrderModal = ({ open, onClose }) => {
                     <h6 className="mb-3">Thông tin hóa đơn</h6>
 
                     <div className="row g-3">
-                      <div className="col-12">
-                        <label className="form-label">Tên công ty / đơn vị</label>
+                      <div className="col-12 admin-order-form-group">
+                        <label className="form-label admin-order-form-label">Tên công ty / đơn vị</label>
                         <input
-                          className="form-control"
+                          className={joinControlClassName("form-control admin-order-form-control", errors.invoiceInfo.companyName)}
                           value={formData.invoiceInfo.companyName}
                           onChange={(event) => updateInvoiceField("companyName", event.target.value)}
                           placeholder="Nhập tên công ty"
                         />
+                        {errors.invoiceInfo.companyName && (
+                          <div className="invalid-feedback d-block admin-order-error-text">{errors.invoiceInfo.companyName}</div>
+                        )}
                       </div>
 
-                      <div className="col-md-6">
-                        <label className="form-label">Mã số thuế</label>
+                      <div className="col-md-6 admin-order-form-group">
+                        <label className="form-label admin-order-form-label">Mã số thuế</label>
                         <input
-                          className="form-control"
+                          className={joinControlClassName("form-control admin-order-form-control", errors.invoiceInfo.taxCode)}
                           value={formData.invoiceInfo.taxCode}
                           onChange={(event) => updateInvoiceField("taxCode", event.target.value)}
                           placeholder="Nhập mã số thuế"
                         />
+                        {errors.invoiceInfo.taxCode && (
+                          <div className="invalid-feedback d-block admin-order-error-text">{errors.invoiceInfo.taxCode}</div>
+                        )}
                       </div>
 
-                      <div className="col-md-6">
-                        <label className="form-label">Email nhận hóa đơn</label>
+                      <div className="col-md-6 admin-order-form-group">
+                        <label className="form-label admin-order-form-label">Email nhận hóa đơn</label>
                         <input
-                          className="form-control"
+                          type="email"
+                          className={joinControlClassName("form-control admin-order-form-control", errors.invoiceInfo.invoiceEmail)}
                           value={formData.invoiceInfo.invoiceEmail}
                           onChange={(event) => updateInvoiceField("invoiceEmail", event.target.value)}
                           placeholder="Nhập email nhận hóa đơn"
                         />
+                        {errors.invoiceInfo.invoiceEmail && (
+                          <div className="invalid-feedback d-block admin-order-error-text">{errors.invoiceInfo.invoiceEmail}</div>
+                        )}
                       </div>
 
-                      <div className="col-12">
-                        <label className="form-label">Địa chỉ xuất hóa đơn</label>
+                      <div className="col-12 admin-order-form-group">
+                        <label className="form-label admin-order-form-label">Địa chỉ xuất hóa đơn</label>
                         <textarea
-                          className="form-control"
+                          className={joinControlClassName("form-control admin-order-form-control admin-order-textarea", errors.invoiceInfo.invoiceAddress)}
                           rows={2}
                           value={formData.invoiceInfo.invoiceAddress}
                           onChange={(event) => updateInvoiceField("invoiceAddress", event.target.value)}
                           placeholder="Nhập địa chỉ công ty / hóa đơn"
                         />
+                        {errors.invoiceInfo.invoiceAddress && (
+                          <div className="invalid-feedback d-block admin-order-error-text">{errors.invoiceInfo.invoiceAddress}</div>
+                        )}
                       </div>
 
-                      <div className="col-12">
-                        <label className="form-label">Ghi chú hóa đơn</label>
+                      <div className="col-12 admin-order-form-group">
+                        <label className="form-label admin-order-form-label">Ghi chú hóa đơn</label>
                         <textarea
-                          className="form-control"
+                          className="form-control admin-order-form-control admin-order-textarea"
                           rows={2}
                           value={formData.invoiceInfo.note}
                           onChange={(event) => updateInvoiceField("note", event.target.value)}
@@ -548,10 +718,17 @@ const CreateOrderModal = ({ open, onClose }) => {
                 </div>
 
                 <div className="d-flex flex-column gap-3 admin-order-product-list">
+                  {errors.productsMessage && (
+                    <div className="alert alert-danger py-2 px-3 mb-0 admin-order-products-alert">
+                      {errors.productsMessage}
+                    </div>
+                  )}
+
                   {formData.products.map((item, index) => {
                     const pricing = getLinePricing(item);
                     const variants = getVariantsByProduct(item.productId);
                     const availableStock = Number(pricing.variant?.quantity || 0);
+                    const lineErrors = errors.products[index] || {};
 
                     return (
                       <div
@@ -567,11 +744,11 @@ const CreateOrderModal = ({ open, onClose }) => {
                           </span>
                         </div>
 
-                        <div className="row g-3 align-items-end">
+                        <div className="row g-3 align-items-start admin-order-product-grid">
                           <div className="col-lg-5 col-md-12">
-                            <label className="form-label">Sản phẩm</label>
+                            <label className="form-label admin-order-form-label">Sản phẩm</label>
                             <select
-                              className="form-control"
+                              className={joinControlClassName("form-control admin-order-form-control", lineErrors.productId)}
                               value={item.productId}
                               onChange={(event) => handleProductChange(index, event.target.value)}
                             >
@@ -582,12 +759,15 @@ const CreateOrderModal = ({ open, onClose }) => {
                                 </option>
                               ))}
                             </select>
+                            {lineErrors.productId && (
+                              <div className="invalid-feedback d-block admin-order-error-text">{lineErrors.productId}</div>
+                            )}
                           </div>
 
                           <div className="col-lg-3 col-md-6">
-                            <label className="form-label">Biến thể</label>
+                            <label className="form-label admin-order-form-label">Biến thể</label>
                             <select
-                              className="form-control"
+                              className={joinControlClassName("form-control admin-order-form-control", lineErrors.color)}
                               value={item.color}
                               onChange={(event) =>
                                 handleProductItemChange(index, "color", event.target.value)
@@ -601,24 +781,31 @@ const CreateOrderModal = ({ open, onClose }) => {
                                 </option>
                               ))}
                             </select>
+                            {lineErrors.color && (
+                              <div className="invalid-feedback d-block admin-order-error-text">{lineErrors.color}</div>
+                            )}
                           </div>
 
                           <div className="col-lg-2 col-md-3 col-6">
-                            <label className="form-label">Số lượng</label>
+                            <label className="form-label admin-order-form-label">Số lượng</label>
                             <input
                               type="number"
                               min={1}
                               max={availableStock || undefined}
-                              className="form-control"
+                              className={joinControlClassName("form-control admin-order-form-control", lineErrors.quantity)}
                               value={item.quantity}
                               onChange={(event) =>
                                 handleProductItemChange(index, "quantity", event.target.value)
                               }
                             />
-                            <div className="form-text">Tối đa {availableStock || 0}</div>
+                            {lineErrors.quantity ? (
+                              <div className="invalid-feedback d-block admin-order-error-text">{lineErrors.quantity}</div>
+                            ) : (
+                              <div className="form-text admin-order-helper-text">Tối đa {availableStock || 0}</div>
+                            )}
                           </div>
 
-                          <div className="col-lg-2 col-md-3 col-6 text-end">
+                          <div className="col-lg-2 col-md-3 col-6 text-end admin-order-product-actions">
                             <button
                               type="button"
                               className="btn btn-outline-danger btn-sm w-100"

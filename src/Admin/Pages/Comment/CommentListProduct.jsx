@@ -3,6 +3,9 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useComments } from "../../../Hook/useComment";
 
+const COMMENT_PRODUCT_FALLBACK_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' rx='8' fill='%23e2e8f0'/%3E%3Cpath d='M10 34l9-10 7 8 4-5 10 10H10z' fill='%2394a3b8'/%3E%3Ccircle cx='18' cy='16' r='4' fill='%2394a3b8'/%3E%3C/svg%3E";
+
 const CommentListProduct = () => {
   const { comments, isLoading } = useComments();
 
@@ -47,9 +50,14 @@ const CommentListProduct = () => {
                             <img
                               src={
                                 item.productImage ||
-                                "https://via.placeholder.com/50"
+                                COMMENT_PRODUCT_FALLBACK_IMAGE
                               }
                               alt={item.name || "No Image"}
+                              onError={(event) => {
+                                event.currentTarget.onerror = null;
+                                event.currentTarget.src =
+                                  COMMENT_PRODUCT_FALLBACK_IMAGE;
+                              }}
                               style={{
                                 width: "50px",
                                 height: "50px",

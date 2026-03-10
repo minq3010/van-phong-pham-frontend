@@ -5,6 +5,7 @@ import "swiper/css/navigation";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./Router/Router";
 import { QueryClient, QueryClientProvider } from "react-query";
+import AppErrorBoundary from "./Ui/AppErrorBoundary.jsx";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -18,8 +19,10 @@ const queryClient = new QueryClient({
 });
 createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
+    <AppErrorBoundary>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AppErrorBoundary>
   </QueryClientProvider>
 );

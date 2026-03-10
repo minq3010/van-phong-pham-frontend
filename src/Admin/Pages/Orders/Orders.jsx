@@ -1,4 +1,4 @@
-import { Empty, Spin } from "antd";
+import { Alert, Empty, Spin } from "antd";
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FormatDate, FormatDateTime, FormatPrice } from "../../../Format";
@@ -23,7 +23,7 @@ const Orders = () => {
   const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false);
 
   // gọi API với param từ URL
-  const { data, isLoading } = useOrder( {
+  const { data, isLoading, isError, error } = useOrder( {
     search: searchParam,
     statusOrder: statusParam,
     payment: paymentParam,
@@ -105,6 +105,21 @@ const Orders = () => {
         size="large"
         className="h-[50vh] mt-[100px] flex items-center justify-center w-full "
       />
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="row">
+        <div className="col-lg-12">
+          <Alert
+            type="error"
+            showIcon
+            message="Không thể tải danh sách đơn hàng"
+            description={error?.response?.data?.message || error?.message || "Yêu cầu lấy đơn hàng thất bại."}
+          />
+        </div>
+      </div>
     );
   }
 
@@ -250,6 +265,8 @@ const Orders = () => {
                         <tr key={order._id}>
                           {(() => {
                             const orderSource = getOrderSourceMeta(order);
+                            const orderDisplayDate =
+                              order?.orderDate || order?.createdAt || null;
 
                             return (
                               <>
@@ -274,9 +291,9 @@ const Orders = () => {
                           </td>
 
                           <td className="date">
-                            <FormatDate date={order.createdAt} />
+                            <FormatDate date={orderDisplayDate} />
                             <small className="text-muted">
-                              <FormatDateTime dateString={order.createdAt} />
+                              <FormatDateTime dateString={orderDisplayDate} />
                             </small>
                           </td>
                           <td className="amount">

@@ -1,5 +1,6 @@
 import axios from "axios";
 import nProgress from "nprogress";
+import { getStoredToken, isStoredTokenExpired, logoutUser } from "../utils/auth";
 
 nProgress.configure({
   showSpinner: false,
@@ -16,7 +17,14 @@ const instance = axios.create({
 
 instance.interceptors.request.use(
   function (config) {
-    const token = JSON?.parse(localStorage.getItem("auth_token"));
+    if (isStoredTokenExpired()) {
+      nProgress.done();
+      logoutUser();
+      return Promise.reject(new axios.Cancel("Token expired"));
+    }
+
+    const token = getStoredToken();
+
     if (token) {
       config.headers["Authorization"] = "Bearer " + token;
     }
@@ -35,6 +43,17 @@ instance.interceptors.response.use(
   },
   function (error) {
     nProgress.done();
+
+    const status = error?.response?.status;
+    const message = error?.response?.data?.message || "";
+    const shouldLogout =
+      status === 401 ||
+      /token expired|invalid token|access token missing/i.test(message);
+
+    if (shouldLogout) {
+      logoutUser();
+    }
+
     return Promise.reject(error);
   }
 );

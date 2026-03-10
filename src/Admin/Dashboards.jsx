@@ -1,41 +1,97 @@
-import { Spin } from "antd";
-import React, { useState } from "react";
+import { Alert, Modal, Spin, message } from "antd";
+import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FormatPrice } from "../Format";
+import { useDeleteProduct } from "../Hook/useProduct.jsx";
 import useDashboard from "../Hook/useDashboard";
 import { NumberOrder } from "./Char";
 
-const Dashboards = () => {
-  const [searchParams] = useSearchParams();
+const PRODUCT_FALLBACK_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e2e8f0'/%3E%3Cpath d='M38 102l24-28 18 22 12-14 20 20H38z' fill='%2394a3b8'/%3E%3Ccircle cx='56' cy='52' r='10' fill='%2394a3b8'/%3E%3Ctext x='75' y='128' text-anchor='middle' font-family='Arial, sans-serif' font-size='12' fill='%23475569'%3ENo Image%3C/text%3E%3C/svg%3E";
 
-  const startdate = searchParams.get("startdate") || null;
-
-  let enddateRaw = searchParams.get("enddate");
-
-  if (!enddateRaw) {
-    const now = new Date();
-    now.setHours(now.getHours() + 7);
-    enddateRaw = now.toISOString().split("T")[0];
-  } else {
-    const temp = new Date(enddateRaw);
-    temp.setHours(temp.getHours() + 7);
-    enddateRaw = temp.toISOString().split("T")[0];
+const getStoredUser = () => {
+  try {
+    const rawUser = localStorage.getItem("user");
+    return rawUser ? JSON.parse(rawUser) : null;
+  } catch {
+    return null;
   }
+};
 
-  const enddate = enddateRaw;
-  const { data, isLoading } = useDashboard({ startdate, enddate });
+const Dashboards = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const startdate = searchParams.get("startdate") || null;
+  const enddate = searchParams.get("enddate") || null;
+  const { data, isLoading, isError, error } = useDashboard({ startdate, enddate });
+  const { mutate: deleteProduct } = useDeleteProduct();
 
-  const [startDateValue, setstartDateValue] = useState();
-  const [endDateValue, setendDateValue] = useState();
+  const [startDateValue, setstartDateValue] = useState(
+    searchParams.get("startdate") || ""
+  );
+  const [endDateValue, setendDateValue] = useState(
+    searchParams.get("enddate") || ""
+  );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState("");
 
-  const makeLink = (key, value) => {
+  useEffect(() => {
+    setstartDateValue(searchParams.get("startdate") || "");
+    setendDateValue(searchParams.get("enddate") || "");
+  }, [searchParams]);
+
+  const applyDateFilter = () => {
+    if (startDateValue && endDateValue && startDateValue > endDateValue) {
+      message.warning("Ngày bắt đầu không được lớn hơn ngày kết thúc");
+      return;
+    }
+
     const updatedParams = new URLSearchParams(searchParams.toString());
-    updatedParams.set(key, value);
-    return `/?${updatedParams.toString()}`;
+
+    if (startDateValue) {
+      updatedParams.set("startdate", startDateValue);
+    } else {
+      updatedParams.delete("startdate");
+    }
+
+    if (endDateValue) {
+      updatedParams.set("enddate", endDateValue);
+    } else {
+      updatedParams.delete("enddate");
+    }
+
+    setSearchParams(updatedParams);
   };
 
-  const dataString = localStorage.getItem("user");
-  const dataUser = JSON.parse(dataString);
+  const resetDateFilter = () => {
+    const updatedParams = new URLSearchParams(searchParams.toString());
+    updatedParams.delete("startdate");
+    updatedParams.delete("enddate");
+    setstartDateValue("");
+    setendDateValue("");
+    setSearchParams(updatedParams);
+  };
+
+  const dataUser = getStoredUser();
+
+  const openDeleteModal = (productId) => {
+    setSelectedProductId(productId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedProductId("");
+  };
+
+  const handleDeleteProduct = () => {
+    if (!selectedProductId) {
+      closeDeleteModal();
+      return;
+    }
+
+    deleteProduct(selectedProductId);
+    closeDeleteModal();
+  };
 
   if (isLoading) {
     return (
@@ -43,6 +99,23 @@ const Dashboards = () => {
         size="large"
         className="h-[50vh] mt-[100px] flex items-center justify-center w-full"
       />
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="py-4">
+        <Alert
+          type="error"
+          showIcon
+          message="Không thể tải dữ liệu thống kê"
+          description={
+            error?.response?.data?.message ||
+            error?.message ||
+            "Trang thống kê gặp lỗi khi lấy dữ liệu từ máy chủ."
+          }
+        />
+      </div>
     );
   }
 
@@ -63,14 +136,15 @@ const Dashboards = () => {
     // Top products mapping
     topSellingProducts: (data?.topProducts || []).map((product) => ({
       id: product.productId,
-      product_name: product.name,
-      product_image: product.image || "https://via.placeholder.com/150",
+      is_available: Boolean(product.isProductAvailable && product.productId),
+      product_name: product.name || "Sản phẩm không xác định",
+      product_image: product.image || PRODUCT_FALLBACK_IMAGE,
       variant_name: product.variant || "Mặc định",
-      price: product.price,
+      price: Number(product.price || 0),
       color: product.color,
       total_orders: product.qty,
       quantity: product.stock || 0,
-      total_amount: product.price * product.qty,
+      total_amount: Number(product.totalAmount || 0),
       last_order_date: product.lastOrderDate
         ? new Date(product.lastOrderDate).toLocaleDateString("vi-VN")
         : new Date().toLocaleDateString("vi-VN"),
@@ -81,7 +155,7 @@ const Dashboards = () => {
       id: order._id,
       order_code: `#${order.madh}`,
       user: order.customerName,
-      items: order.products.map((p) => ({
+      items: (Array.isArray(order.products) ? order.products : []).map((p) => ({
         product_name: p.productId?.name || "N/A",
         color: p.color || "N/A",
       })),
@@ -89,60 +163,71 @@ const Dashboards = () => {
       status: order.status,
     })),
   };
-console.log(mappedData);
+
   return (
     <div className="">
       <div className="row mb-3 pb-1">
         <div className="col-12">
           <div className="d-flex align-items-lg-center flex-lg-row flex-column">
             <div className="flex-grow-1">
-              <h4 className="fs-16 mb-1">Xin chào, {dataUser.username}!</h4>
+              <h4 className="fs-16 mb-1">
+                Xin chào, {dataUser?.username || "quản trị viên"}!
+              </h4>
               <p className="text-muted mb-0">
                 Đây là những gì đang diễn ra với cửa hàng của bạn ngày hôm nay
               </p>
             </div>
             <div className="mt-3 mt-lg-0">
-              <form>
-                <div className="row g-3 mb-0 align-items-center">
-                  <div className="col-sm-auto flex gap-3">
-                    <label htmlFor="">Ngày bắt đầu</label>
-                    <div className="input-group ">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  applyDateFilter();
+                }}
+              >
+                <div className="dashboard-filter-panel d-flex flex-wrap align-items-end gap-2">
+                  <div className="dashboard-filter-field">
+                    <label className="dashboard-filter-label">Từ ngày</label>
+                    <div className="input-group input-group-sm">
                       <input
                         type="date"
-                        className="form-control border-0 dash-filter-picker shadow"
+                        className="form-control dash-filter-picker shadow-none"
                         onChange={(e) => setstartDateValue(e.target.value)}
                         value={startDateValue}
                       />
-                      <Link
-                        to={
-                          startDateValue !== undefined
-                            ? makeLink("startdate", startDateValue)
-                            : null
-                        }
-                        className="input-group-text bg-primary border-primary text-white"
-                      >
+                      <span className="input-group-text bg-light text-muted">
                         <i className="ri-calendar-2-line" />
-                      </Link>
+                      </span>
                     </div>
+                  </div>
 
-                    <label htmlFor="">Ngày kết thúc</label>
-                    <div className="input-group">
+                  <div className="dashboard-filter-field">
+                    <label className="dashboard-filter-label">Đến ngày</label>
+                    <div className="input-group input-group-sm">
                       <input
                         type="date"
-                        className="form-control border-0 dash-filter-picker shadow"
+                        className="form-control dash-filter-picker shadow-none"
                         onChange={(e) => setendDateValue(e.target.value)}
                         value={endDateValue}
                       />
-                      <Link
-                        to={
-                          endDateValue !== undefined
-                            ? makeLink("enddate", endDateValue)
-                            : null
-                        }
-                        className="input-group-text bg-primary border-primary text-white"
-                      >
+                      <span className="input-group-text bg-light text-muted">
                         <i className="ri-calendar-2-line" />
-                      </Link>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="dashboard-filter-field">
+                    <label className="dashboard-filter-label d-block" style={{ visibility: "hidden" }}>Action</label>
+                    <div className="d-flex gap-2">
+                      <button type="submit" className="btn btn-sm btn-primary">
+                        Lọc
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light"
+                        onClick={resetDateFilter}
+                      >
+                        Bỏ lọc
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -306,6 +391,15 @@ console.log(mappedData);
             <div className="card-body">
               <div className="table-responsive table-card">
                 <table className="table table-hover table-centered align-middle table-nowrap mb-0">
+                  <thead className="text-muted table-light">
+                    <tr>
+                      <th>Sản phẩm</th>
+                      <th>Giá</th>
+                      <th>Số lượng</th>
+                      <th>Tổng tiền</th>
+                      <th className="text-end">Thao tác</th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {mappedData.topSellingProducts.map((item, index) => (
                       <tr key={index}>
@@ -314,21 +408,38 @@ console.log(mappedData);
                             <div className="avatar-sm  bg-light rounded p-1 me-2">
                               <img
                                 src={item.product_image}
-                                alt=""
+                                alt={item.product_name}
                                 className="img-fluid d-block max-h-14"
+                                onError={(event) => {
+                                  event.currentTarget.onerror = null;
+                                  event.currentTarget.src = PRODUCT_FALLBACK_IMAGE;
+                                }}
                               />
                             </div>
                             <div>
                               <h5 className="fs-14 my-1">
-                                <Link
-                                  to={`product_detail/${item.id}`}
-                                  className="text-reset"
-                                >
-                                  {item?.product_name?.length > 20
-                                    ? item?.product_name?.slice(0, 20) + "..."
-                                    : item?.product_name}
-                                </Link>
+                                {item?.is_available ? (
+                                  <Link
+                                    to={`/product_detail/${item.id}`}
+                                    className="text-reset"
+                                  >
+                                    {item?.product_name?.length > 20
+                                      ? item?.product_name?.slice(0, 20) + "..."
+                                      : item?.product_name}
+                                  </Link>
+                                ) : (
+                                  <span className="text-muted">
+                                    {item?.product_name?.length > 20
+                                      ? item?.product_name?.slice(0, 20) + "..."
+                                      : item?.product_name}
+                                  </span>
+                                )}
                               </h5>
+                              {!item?.is_available && (
+                                <div className="text-muted small">
+                                  Sản phẩm gốc không còn tồn tại
+                                </div>
+                              )}
                               <div>{item.color}</div>
                               <span className="text-muted">
                                 {item.last_order_date}
@@ -353,6 +464,38 @@ console.log(mappedData);
                             <FormatPrice price={item.total_amount} />
                           </h5>
                           <span className="text-muted">Tổng tiền</span>
+                        </td>
+                        <td className="text-end">
+                          {item?.is_available ? (
+                            <div className="d-inline-flex align-items-center gap-2">
+                              <Link
+                                to={`/product_detail/${item.id}`}
+                                className="text-primary d-inline-block"
+                                title="Xem"
+                              >
+                                <i className="ri-eye-fill fs-16" />
+                              </Link>
+                              <Link
+                                to={`/uppdateproduct/${item.id}`}
+                                className="text-info d-inline-block"
+                                title="Sửa"
+                              >
+                                <i className="ri-pencil-fill fs-16" />
+                              </Link>
+                              {dataUser?.role === "manage" && (
+                                <button
+                                  type="button"
+                                  className="btn btn-link text-danger p-0 d-inline-flex align-items-center"
+                                  title="Xóa"
+                                  onClick={() => openDeleteModal(item.id)}
+                                >
+                                  <i className="ri-delete-bin-5-fill fs-16" />
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted small">Không khả dụng</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -432,6 +575,18 @@ console.log(mappedData);
           </div>
         </div>
       </div>
+
+      <Modal
+        open={isDeleteModalOpen}
+        onOk={handleDeleteProduct}
+        onCancel={closeDeleteModal}
+        okText="Xóa"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true }}
+        title="Xóa sản phẩm"
+      >
+        <p className="mb-0">Bạn có chắc muốn xóa sản phẩm này không?</p>
+      </Modal>
     </div>
   );
 };

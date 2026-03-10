@@ -31,11 +31,11 @@ const UseDetailOrder = () => {
 };
 
 const useOrder = ( filters = {}) => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["order",  filters],
     queryFn: () => getOrdersAdmin( filters),
   });
-  return { data, isLoading };
+  return { data, isLoading, isError, error };
 };
 // const deleteOrder=()=>{
 //   const {mutate,isLoading}=useMutation({

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDetailProduct } from "../../../Hook/useDetailProduct";
-import { Spin, Table } from "antd";
+import { Empty, Spin, Table } from "antd";
 import { FormatDate, FormatPrice } from "../../../Format";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Thumbs } from "swiper/modules";
@@ -12,6 +12,14 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 const Detail = () => {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const { detailProduct, isDetailProduct } = useDetailProduct();
+  const product = detailProduct?.data;
+  const variants = Array.isArray(product?.variants) ? product.variants : [];
+  const images =
+    Array.isArray(product?.abumImage) && product.abumImage.length > 0
+      ? product.abumImage
+      : product?.imageUrl
+        ? [product.imageUrl]
+        : [];
 
   if (isDetailProduct) {
     return (
@@ -20,6 +28,15 @@ const Detail = () => {
       </div>
     );
   }
+
+  if (!product) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Empty description="Không tìm thấy thông tin sản phẩm" />
+      </div>
+    );
+  }
+
   const columns = [
     {
       title: "Color",
@@ -39,20 +56,13 @@ const Detail = () => {
       dataIndex: "quantity",
     },
   ];
-  const data = detailProduct?.data?.variants.map((item) => ({
+  const data = variants.map((item) => ({
     color: item?.color,
 
-    quantity: item.quantity,
-    price: item.price,
+    quantity: item?.quantity,
+    price: item?.price,
   }));
-  console.log(detailProduct.data.variants);
-  // Lấy danh sách ảnh từ bumImage hoặc fallback về imageUrl
-  const images =
-    detailProduct?.data?.abumImage && detailProduct.data.abumImage.length > 0
-      ? detailProduct.data.abumImage
-      : detailProduct?.data?.imageUrl
-        ? [detailProduct.data.imageUrl]
-        : [];
+
   return (
     <div className="row">
       <div className="col-lg-12">
@@ -70,10 +80,10 @@ const Detail = () => {
                         nextEl: ".custom-next",
                       }}
                       loop
-                      thumbs={{ swiper: thumbsSwiper }}
+                      thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
                       className="product-thumbnail-slider p-2 rounded bg-light"
                     >
-                      {detailProduct?.data?.abumImage?.map((img, index) => (
+                      {images.map((img, index) => (
                         <SwiperSlide key={index}>
                           <img
                             src={img}
@@ -86,7 +96,7 @@ const Detail = () => {
                     </Swiper>
 
                     {/* Navigation Buttons - Only show if more than 1 image */}
-                    {detailProduct?.data?.abumImage.length > 1 && (
+                    {images.length > 1 && (
                       <>
                         <button className="custom-prev absolute top-1/2 -translate-y-1/2 left-2 z-50 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all">
                           <FaChevronLeft className="text-xl" />
@@ -128,31 +138,29 @@ const Detail = () => {
                   <div className="d-flex">
                     <div className="flex-grow-1">
                       <h4 className="text-2xl mb-2 font-semibold">
-                        {detailProduct?.data?.name}
+                        {product?.name}
                       </h4>
                       <div className="hstack text-[16px] mb-3 gap-3 flex-wrap">
                         <div className="text-muted">
                           Danh mục:{" "}
                           <span className="text-body fw-medium">
-                            {detailProduct?.data?.caterori?.name}
+                            {product?.caterori?.name || "Chưa cập nhật"}
                           </span>
                         </div>
                         <div className="vr" />
                         <div className="text-muted">
                           Ngày công khai:{" "}
                           <span className="text-body fw-medium">
-                            {detailProduct?.data?.createdAt && (
-                              <FormatDate date={detailProduct.data.createdAt} />
-                            )}
+                            {product?.createdAt ? <FormatDate date={product.createdAt} /> : "Chưa có"}
                           </span>
                         </div>
                         <div className="vr" />
                         <div className="text-muted">
                           Trạng thái:{" "}
                           <span
-                            className={`fw-medium ${detailProduct?.data?.status ? "text-success" : "text-danger"}`}
+                            className={`fw-medium ${product?.status ? "text-success" : "text-danger"}`}
                           >
-                            {detailProduct?.data?.status
+                            {product?.status
                               ? "Đang hoạt động"
                               : "Ngừng hoạt động"}
                           </span>
@@ -163,35 +171,36 @@ const Detail = () => {
 
                   {/* Price Section */}
                   <div className="mb-3">
-                    {detailProduct?.data?.discount > 0 ? (
+                    {product?.discount > 0 ? (
                       <div>
                         <h4 className="text-xl mb-2">
                           <span className="text-decoration-line-through text-muted me-2">
-                            {detailProduct?.data?.price && (
-                              <FormatPrice price={detailProduct.data.price} />
+                            {product?.price ? (
+                              <FormatPrice price={product.price} />
+                            ) : (
+                              "Chưa có giá"
                             )}
                           </span>
                           <span className="badge bg-danger-subtle text-danger">
-                            -{detailProduct.data.discount}%
+                            -{product.discount}%
                           </span>
                         </h4>
                         <h3 className="text-2xl text-danger fw-bold">
-                          {detailProduct?.data?.price && (
+                          {product?.price ? (
                             <FormatPrice
                               price={
-                                detailProduct.data.price *
-                                (1 - detailProduct.data.discount / 100)
+                                product.price * (1 - product.discount / 100)
                               }
                             />
+                          ) : (
+                            "Chưa có giá"
                           )}
                         </h3>
                       </div>
                     ) : (
                       <h4 className="text-xl">
                         Giá:{" "}
-                        {detailProduct?.data?.price && (
-                          <FormatPrice price={detailProduct.data.price} />
-                        )}
+                        {product?.price ? <FormatPrice price={product.price} /> : "Chưa có giá"}
                       </h4>
                     )}
                   </div>
@@ -200,7 +209,7 @@ const Detail = () => {
                   <div className="mt-4 text-muted">
                     <h5 className="fs-14 fw-semibold">Mô tả:</h5>
                     <p className="text-justify">
-                      {detailProduct?.data?.description}
+                      {product?.description || "Chưa có mô tả"}
                     </p>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
-import useAuth from "../Hook/useAuth";
 import Axios from "./Axios";
+import { getStoredToken, getStoredUser } from "../utils/auth";
 export const getProducts = async (page, filters = {}) => {
   const params = new URLSearchParams();
   if (filters.price) params.append("price", filters.price);
@@ -35,7 +35,11 @@ export const forceDeleteProduct = async (id) => {
 };
 
 export const updateProduct = async (id, data) => {
-  const res = await Axios.patch(`products/${id}`, data);
+  const res = await Axios.patch(`products/${id}`, data, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return res.data;
 };
 export const categoryProduct = async (id) => {
@@ -48,7 +52,7 @@ export const signin = async (data) => {
   return res.data;
 };
 export const signup = async (data) => {
-  const res = await Axios.post(`api/register`, data);
+  const res = await Axios.post(`/register`, data);
   return res.data;
 };
 // export const logout=async ()=>{
@@ -61,13 +65,12 @@ export const signup = async (data) => {
 // }
 
 export const logout = async () => {
-  const authToken = localStorage.getItem("auth_token");
-  if (!authToken) {
+  const token = getStoredToken();
+  if (!token) {
     throw new Error("No auth token found");
   }
 
-  const token = JSON.parse(authToken).split("|")[1];
-  const res = await Axios.post("/api/logout", null, {
+  const res = await Axios.post(`/logout`, null, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -76,12 +79,7 @@ export const logout = async () => {
 };
 
 export const getUserToken = async () => {
-  const res = await Axios.get(`api/user_token`, {
-    // headers: {
-    //   Authorization: `Bearer ${JSON.parse(localStorage.getItem("auth_token")).split("|")[1]}`,
-    // },
-  });
-  return res.data.user;
+  return getStoredUser();
 };
 export const categoryForcedelete = async (id) => {
   const res = await Axios.delete(`/category/${id}`);
@@ -100,16 +98,21 @@ export const getOrderCustomers = async () => {
   return res.data;
 };
 export const detailUser = async () => {
-  const { data: user } = useAuth();
-  const res = await Axios.get(`api/users/${user.id}`);
+  const user = getStoredUser();
+
+  if (!user?._id) {
+    throw new Error("User not found in local storage");
+  }
+
+  const res = await Axios.get(`/user/${user._id}`);
   return res.data;
 };
 export const detailUserId = async (id) => {
-  const res = await Axios.get(`api/users/${id}`);
+  const res = await Axios.get(`/user/${id}`);
   return res.data;
 };
 export const deleteUser = async (id) => {
-  const res = await Axios.delete(`api/users/${id}`);
+  const res = await Axios.delete(`/user/${id}`);
   return res.data;
 };
 export const addUsers = async (data) => {
@@ -152,7 +155,11 @@ export const detailOrder = async (id) => {
 };
 
 export const addProduct = async (data) => {
-  const res = await Axios.post(`/products`, data);
+  const res = await Axios.post(`/products`, data, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return res.data;
 };
 
@@ -171,15 +178,17 @@ export const dashboard = async (startDate, endDate) => {
   }
 };
 export const emailPassword = async (data) => {
-  const res = await Axios.post("api/forgot", data);
+  const res = await Axios.post(`/forgot-password`, data);
   return res.data;
 };
 export const verifytoken = async (data) => {
-  const res = await Axios.post("api/verify-token", data);
+  const res = await Axios.post(`/verify-token`, data);
   return res.data;
 };
 export const resetpassword = async (data) => {
-  const res = await Axios.post("api/reset-password", data);
+  const token = data?.token;
+  const payload = token ? { ...data, token: undefined } : data;
+  const res = await Axios.post(`/reset-password/${token}`, payload);
   return res.data;
 };
 
