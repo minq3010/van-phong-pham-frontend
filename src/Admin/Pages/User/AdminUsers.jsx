@@ -7,7 +7,7 @@ import { user } from "../../../Apis/Api";
 import { FormatDate } from "../../../Format";
 import { useAddUser, useUpdateUser } from "../../../Hook/useUser";
 
-const Customers = () => {
+const AdminUsers = () => {
   const { mutate: updateuser } = useUpdateUser();
   const { mutate } = useAddUser();
   const location = useLocation();
@@ -19,7 +19,7 @@ const Customers = () => {
   const [block, setBlock] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["customers", page, searchQuery],
+    queryKey: ["admin-users", page, searchQuery],
     queryFn: () => user(page, searchQuery),
   });
 
@@ -77,7 +77,7 @@ const Customers = () => {
   return (
     <div className="row px-4">
       <div className="col-lg-12">
-        <div className="card" id="customerList">
+        <div className="card" id="userList">
           <div className="card-body border-bottom-dashed border-bottom">
             <form onSubmit={handleSearchSubmit}>
               <div className="row g-3">
@@ -121,7 +121,7 @@ const Customers = () => {
           <div className="card-body">
             <div>
               <div className="table-responsive table-card mb-1">
-                <table className="table align-middle" id="customerTable">
+                <table className="table align-middle" id="userTable">
                   <thead className="table-light text-muted">
                     <tr>
                       <th scope="col" style={{ width: 50 }}>
@@ -149,7 +149,7 @@ const Customers = () => {
                             #VZ2101
                           </Link>
                         </td>
-                        <td className="customer_name">{item.username}</td>
+                        <td className="user_name">{item.username}</td>
                         <td className="email">{item.email}</td>
                         <td className="phone">
                           {item.phone ?? "Chưa cập nhật"}
@@ -245,20 +245,20 @@ const Customers = () => {
                       </div>
                       <div className="mb-3">
                         <label
-                          htmlFor="customername-field"
+                          htmlFor="username-field"
                           className="form-label"
                         >
                           Tên
                         </label>
                         <input
                           type="text"
-                          id="customername-field"
+                          id="username-field"
                           className="form-control"
-                          placeholder="Enter name"
+                          placeholder="Nhập tên admin"
                           {...register("username", { required: true })}
                         />
                         <div className="text-red-500 mt-1">
-                          {errors.username && "Please enter a customer name."}
+                          {errors.username && "Vui lòng nhập tên admin."}
                         </div>
                       </div>
                       <div className="mb-3">
@@ -269,7 +269,7 @@ const Customers = () => {
                           type="text"
                           id="email-field"
                           className="form-control"
-                          placeholder="Enter email"
+                          placeholder="Nhập email"
                           {...register("email", {
                             required: "Vui lòng nhập email.",
                             pattern: {
@@ -291,14 +291,14 @@ const Customers = () => {
                           className="px-3 py-2 mt-2 rounded-md bg-[#F3F6F9]"
                           onClick={() => { setBlock(false); reset(); }}
                         >
-                          Close
+                          Đóng
                         </button>
                         <button
                           type="submit"
                           className="px-3 py-2 mt-2 rounded-md btn-success"
                           id="add-btn"
                         >
-                          Add Customer
+                          Thêm Admin
                         </button>
                       </div>
                     </div>
@@ -313,4 +313,4 @@ const Customers = () => {
   );
 };
 
-export default Customers;
+export default AdminUsers;

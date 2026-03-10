@@ -234,7 +234,7 @@ const UpdateProduct = () => {
                     showUploadList={false}
                     disabled
                   >
-                    {fileList.length >= 1 && (
+                    {fileList.length >= 1 && fileList[0]?.url && (
                       <img
                         draggable={false}
                         src={fileList[0].url}

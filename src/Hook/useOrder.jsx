@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import { message } from "antd";
 import { useParams } from "react-router-dom";
 import {
+  createAdminOrder,
   detailOrder,
   getOrdersAdmin,
+  getProducts,
+  getVouchers,
   udateStatusOrder,
 } from "../Apis/Api.jsx";
 
@@ -55,9 +58,50 @@ const useStatusOrderAdmin = (id) => {
   return { mutate, isLoading };
 };
 
+const useOrderFormOptions = () => {
+  const productsQuery = useQuery({
+    queryKey: ["order-form-products"],
+    queryFn: () => getProducts(),
+  });
+
+  const vouchersQuery = useQuery({
+    queryKey: ["order-form-vouchers"],
+    queryFn: () => getVouchers(),
+  });
+
+  return {
+    products: productsQuery.data?.data || [],
+    vouchers: Array.isArray(vouchersQuery.data)
+      ? vouchersQuery.data
+      : vouchersQuery.data?.data || [],
+    isLoading: productsQuery.isLoading || vouchersQuery.isLoading,
+  };
+};
+
+const useCreateOrderAdmin = () => {
+  const queryClient = useQueryClient();
+
+  const { mutate, isLoading } = useMutation({
+    mutationFn: (data) => createAdminOrder(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["order"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["order-form-products"] });
+      message.success(response?.message || "Tạo đơn hàng thành công");
+    },
+    onError: (error) => {
+      message.error(error?.response?.data?.message || "Tạo đơn hàng thất bại");
+    },
+  });
+
+  return { mutate, isLoading };
+};
+
 export {
   UseDetailOrder,
   useOrder,
+  useCreateOrderAdmin,
+  useOrderFormOptions,
   useStatusOrderAdmin,
 
 };

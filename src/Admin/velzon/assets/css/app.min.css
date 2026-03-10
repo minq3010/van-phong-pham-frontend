@@ -11416,7 +11416,7 @@ button.gridjs-sort-desc {
   -moz-appearance: none;
   appearance: none;
   -webkit-print-color-adjust: exact;
-  color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .gridjs-td .gridjs-checkbox[type="checkbox"] {

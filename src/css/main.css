@@ -259,6 +259,306 @@ Input, textarea : 14px/1.6 '', Arial, sans-serif;
   background-color: #222;
 }
 
+.admin-sidebar-logo-sm {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 70px;
+}
+
+.admin-sidebar-logo-sm-image {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+}
+
+.admin-menu-link {
+  display: flex !important;
+  align-items: center;
+}
+
+.admin-menu-icon {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  flex-shrink: 0;
+}
+
+:is([data-layout=vertical], [data-layout=semibox]).admin-sidebar-collapsed .navbar-menu .navbar-nav .nav-link {
+  justify-content: center;
+}
+
+:is([data-layout=vertical], [data-layout=semibox]).admin-sidebar-collapsed .navbar-menu .navbar-nav .nav-link .admin-menu-icon {
+  margin-right: 0;
+  font-size: 22px;
+}
+
+:is([data-layout=vertical], [data-layout=semibox]).admin-sidebar-collapsed .admin-sidebar-logo-sm {
+  display: inline-flex;
+}
+
+.admin-order-modal .ant-modal-body {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-top: 12px;
+}
+
+.admin-order-modal .ant-modal {
+  max-width: calc(100vw - 32px);
+}
+
+.admin-order-modal .ant-modal-content {
+  overflow: hidden;
+}
+
+.admin-order-modal-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-order-modal-grid {
+  min-height: 0;
+}
+
+.admin-order-modal-hero {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-order-modal-hero-card {
+  padding: 14px 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.admin-order-modal-hero-card span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.admin-order-modal-hero-card strong {
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.admin-order-modal-hero-total {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.14));
+}
+
+.admin-order-side-card,
+.admin-order-products-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-order-customer-glance {
+  padding: 12px 14px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.admin-order-customer-glance strong,
+.admin-order-customer-glance span {
+  display: block;
+}
+
+.admin-order-customer-glance span {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.admin-order-invoice-toggle {
+  padding-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.admin-order-invoice-card {
+  max-height: none;
+  overflow: visible;
+}
+
+.admin-order-product-list {
+  flex: 1 1 auto;
+  min-height: auto;
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.admin-order-price-row {
+  padding-top: 4px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.28);
+}
+
+.admin-order-total-bar {
+  background: #ffffff;
+  position: sticky;
+  bottom: 0;
+}
+
+.admin-order-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-order-overview-item {
+  padding: 12px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.admin-order-overview-item span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.admin-order-overview-item strong {
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.admin-order-product-item {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.admin-order-product-item:hover {
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.admin-order-filter-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  width: 100%;
+  align-items: center;
+}
+
+.admin-order-filter-btn {
+  min-height: 38px;
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.admin-order-filter-btn:hover {
+  transform: translateY(-1px);
+}
+
+.admin-order-filter-btn-primary {
+  background: linear-gradient(135deg, #5671cc 0%, #3d56b2 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(86, 113, 204, 0.2);
+}
+
+.admin-order-filter-btn-primary:hover {
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(86, 113, 204, 0.24);
+}
+
+.admin-order-filter-btn-secondary {
+  background: #ffffff;
+  border-color: #dbe3f0;
+  color: #475569;
+}
+
+.admin-order-filter-btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.admin-order-filter-actions > * {
+  flex: 1 1 0;
+}
+
+body.ant-scrolling-effect {
+  width: 100% !important;
+  padding-right: 0 !important;
+}
+
+body.ant-scrolling-effect #page-topbar,
+body.ant-scrolling-effect .navbar-menu,
+body.ant-scrolling-effect .main-content,
+body.ant-scrolling-effect .footer {
+  width: auto !important;
+}
+
+@media (max-width: 991.98px) {
+  .admin-order-modal .ant-modal-body {
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+  }
+
+  .admin-order-modal-hero {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-order-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-order-product-list,
+  .admin-order-invoice-card {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .admin-order-modal .ant-modal {
+    max-width: calc(100vw - 16px);
+  }
+
+  .admin-order-modal-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-order-modal .ant-modal-body {
+    padding-top: 8px;
+  }
+}
+
+@media (min-width: 992px) {
+  .admin-order-filter-actions {
+    align-items: stretch;
+  }
+
+  .admin-order-filter-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 /*===
 [ Menu ]*/
 

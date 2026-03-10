@@ -2,27 +2,158 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import FullScreenButton from "./FullScreen";
 import { message } from "antd";
+import appLogo from "../../assets/images/logo.png";
+
 const Layout = () => {
   const [profile, setProfile] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
   const dropdownRef = useRef(null);
+  const isSidebarCollapsedRef = useRef(false);
+  const orderModalSidebarStateRef = useRef({
+    previousCollapsed: false,
+    autoCollapsed: false,
+  });
   const nav = useNavigate();
+
+  useEffect(() => {
+    isSidebarCollapsedRef.current = isSidebarCollapsed;
+  }, [isSidebarCollapsed]);
+
   const handleClick = (e) => {
     if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
       setProfile(false);
     }
   };
+
   useEffect(() => {
     document.addEventListener("mousedown", handleClick);
     return () => {
       document.removeEventListener("mousedown", handleClick);
     };
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const nextIsMobile = window.innerWidth < 768;
+      setIsMobileViewport(nextIsMobile);
+
+      if (!nextIsMobile) {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleCreateOrderModalToggle = (event) => {
+      if (window.innerWidth < 768) {
+        return;
+      }
+
+      const isOpen = Boolean(event.detail?.open);
+
+      if (isOpen) {
+        orderModalSidebarStateRef.current = {
+          previousCollapsed: isSidebarCollapsedRef.current,
+          autoCollapsed: !isSidebarCollapsedRef.current,
+        };
+
+        if (!isSidebarCollapsedRef.current) {
+          setIsSidebarCollapsed(true);
+        }
+
+        return;
+      }
+
+      if (orderModalSidebarStateRef.current.autoCollapsed) {
+        setIsSidebarCollapsed(
+          orderModalSidebarStateRef.current.previousCollapsed
+        );
+      }
+
+      orderModalSidebarStateRef.current = {
+        previousCollapsed: false,
+        autoCollapsed: false,
+      };
+    };
+
+    window.addEventListener(
+      "admin:create-order-modal-toggle",
+      handleCreateOrderModalToggle
+    );
+
+    return () => {
+      window.removeEventListener(
+        "admin:create-order-modal-toggle",
+        handleCreateOrderModalToggle
+      );
+    };
+  }, []);
+
   const { pathname } = useLocation();
 
   const capitalizeFirstLetter = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : "Dashboards";
 
   const thirdPathSegment = capitalizeFirstLetter(pathname.split("/")[1]);
+  const dataString = localStorage.getItem("user");
+  const data = JSON.parse(dataString || "null");
+  const menuItems = [
+    {
+      to: "",
+      match: "Dashboards",
+      icon: "ri-bar-chart-box-line",
+      label: "Thống kê",
+    },
+    {
+      to: "/products",
+      match: "Products",
+      icon: "ri-shopping-bag-3-line",
+      label: "Sản phẩm",
+    },
+    {
+      to: "/order",
+      match: "Order",
+      icon: "ri-file-list-3-line",
+      label: "Đơn hàng",
+    },
+    {
+      to: "/categories",
+      match: "Categories",
+      icon: "ri-folders-line",
+      label: "Danh mục",
+    },
+    {
+      to: "/voucher",
+      match: "Voucher",
+      icon: "ri-coupon-3-line",
+      label: "Mã giảm giá",
+    },
+    {
+      to: "/comment",
+      match: "Comment",
+      icon: "ri-chat-1-line",
+      label: "Đánh giá",
+    },
+    ...(data?.role === "manage"
+      ? [
+          {
+            to: "admins",
+            match: "Admins",
+            icon: "ri-user-settings-line",
+            label: "Tài khoản Admin",
+          },
+        ]
+      : []),
+  ];
   // const { data, isLoading } = useAuth();
   // if (isLoading) {
   //   return (
@@ -32,18 +163,40 @@ const Layout = () => {
   //     />
   //   );
   // }
-  const dataString = localStorage.getItem("user");
-  const data = JSON.parse(dataString);
   const Logout = () => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
     message.success("Đăng xuất thành công");
     nav("/signin");
   };
+
+  const handleSidebarToggle = () => {
+    if (isMobileViewport) {
+      setIsMobileSidebarOpen((current) => !current);
+      return;
+    }
+
+    setIsSidebarCollapsed((current) => !current);
+  };
+
+  const isSidebarOpen = isMobileViewport ? isMobileSidebarOpen : !isSidebarCollapsed;
+  const layoutWrapperClassName = [
+    "layout-wrapper",
+    isMobileSidebarOpen ? "vertical-sidebar-enable navbar-show" : "",
+    !isMobileViewport && isSidebarCollapsed ? "admin-sidebar-collapsed" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div>
       <>
-        <div id="layout-wrapper">
+        <div
+          id="layout-wrapper"
+          className={layoutWrapperClassName}
+          data-layout="vertical"
+          data-sidebar-size={isSidebarCollapsed ? "sm" : undefined}
+        >
           <header id="page-topbar">
             <div className="layout-width">
               <div className="navbar-header">
@@ -54,12 +207,12 @@ const Layout = () => {
                     type="button"
                     className="btn-sm px-3 fs-16 header-item vertical-menu-btn topnav-hamburger border-none bg-none"
                     id="topnav-hamburger-icon"
+                    onClick={handleSidebarToggle}
+                    aria-label={isSidebarOpen ? "An sidebar" : "Hien sidebar"}
                   >
-                    <span className="hamburger-icon">
-                      <span />
-                      <span />
-                      <span />
-                    </span>
+                    <i
+                      className={`${isSidebarOpen ? "ri-menu-fold-line" : "ri-menu-unfold-line"} text-[24px] leading-none text-slate-600`}
+                    />
                   </button>
                 </div>
                 <div className="d-flex align-items-center">
@@ -210,12 +363,35 @@ const Layout = () => {
           {/*=== App Menu=== */}
           <div className="app-menu navbar-menu bg-[#405189]">
             <div className="navbar-brand-box ">
-              <Link to={""} className="logo mr-0">
-                <span className="logo-lg ">
+              <Link
+                to={""}
+                className="logo mr-0 flex items-center justify-center admin-sidebar-logo"
+                style={{ padding: "18px 12px 10px" }}
+              >
+                <span
+                  className="logo-lg flex items-center justify-center w-full"
+                  style={{ minHeight: "128px" }}
+                >
                   <img
-                    src="https://aobidathietke.com/wp-content/uploads/2023/04/Mau-Logo-Bida-Thiet-Ke-Dep-Danh-Cho-doi-Cau-Lac-Bo-Club-Quan-Billiards-31-400x400.png"
-                    alt=""
-                    style={{ height: "150px" }}
+                    src={appLogo}
+                    alt="Van phong pham"
+                    style={{
+                      width: "150px",
+                      maxWidth: "100%",
+                      height: "auto",
+                      objectFit: "contain",
+                      display: "block",
+                      margin: "0 auto",
+                      borderRadius: "16px",
+                      boxShadow: "0 10px 24px rgba(15, 23, 42, 0.18)",
+                    }}
+                  />
+                </span>
+                <span className="logo-sm admin-sidebar-logo-sm">
+                  <img
+                    src={appLogo}
+                    alt="Van phong pham"
+                    className="admin-sidebar-logo-sm-image"
                   />
                 </span>
               </Link>
@@ -228,77 +404,17 @@ const Layout = () => {
               <div className="container-fluid">
                 <div id="two-column-menu" />
                 <ul className="navbar-nav" id="navbar-nav">
-                  <li className="nav-item">
-                    <Link
-                      to=""
-                      className={`nav-link menu-link ${thirdPathSegment === "Dashboards" ? "active" : ""}`}
-                    >
-                      <i className="ri-dashboard-2-line" />
-                      <span data-key="t-dashboards">Thống kê</span>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link
-                      to="/products"
-                      className={`nav-link menu-link ${thirdPathSegment === "Products" ? "active" : ""}`}
-                    >
-                      <i className="ri-apps-2-line" />
-                      <span data-key="t-dashboards">Sản phẩm</span>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link
-                      to="/order"
-                      className={`nav-link menu-link ${thirdPathSegment == "Order" ? "active" : ""}`}
-                    >
-                      <img
-                        src="https://media-public.canva.com/fQMlo/MAF38jfQMlo/1/tl.png"
-                        alt=""
-                        width={20}
-                        style={{ filter: "invert(1) hue-rotate(180deg)" }}
-                        className="me-2"
-                      />
-                      <span data-key="t-layouts">Đơn hàng</span>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link
-                      to="/categories"
-                      className={`nav-link menu-link ${thirdPathSegment === "Categories" ? "active" : ""}`}
-                    >
-                      <i className="ri-dashboard-2-line" />
-                      <span data-key="t-dashboards">Danh mục</span>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link
-                      to="/voucher"
-                      className={`nav-link menu-link ${thirdPathSegment === "Voucher" ? "active" : ""}`}
-                    >
-                      <i class="fa-solid fa-ticket"></i>
-                      <span data-key="t-dashboards">Mã giảm giá</span>
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link
-                      to="/comment"
-                      className={`nav-link menu-link ${thirdPathSegment === "Comment" ? "active" : ""}`}
-                    >
-                      <i class="fa-solid fa-comment"></i>
-                      <span data-key="t-dashboards">Đánh giá</span>
-                    </Link>
-                  </li>
-                  {data.role === "manage" && (
-                    <li className="nav-item">
+                  {menuItems.map((item) => (
+                    <li className="nav-item" key={item.to || item.label}>
                       <Link
-                        to="customers"
-                        className={`nav-link menu-link ${thirdPathSegment == "Customers" ? "active" : ""}`}
+                        to={item.to}
+                        className={`nav-link menu-link admin-menu-link ${thirdPathSegment === item.match ? "active" : ""}`}
                       >
-                        <i className="fa fa-user"></i>
-                        <span data-key="t-layouts">Tài khoản</span>
+                        <i className={`${item.icon} admin-menu-icon`} />
+                        <span data-key="t-dashboards">{item.label}</span>
                       </Link>
                     </li>
-                  )}
+                  ))}
 
                   {/*
                   <li className="nav-item">
@@ -319,7 +435,18 @@ const Layout = () => {
           </div>
           {/* Left Sidebar End */}
           {/* Vertical Overlay*/}
-          <div className="vertical-overlay" />
+          <div
+            className="vertical-overlay"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            role="button"
+            tabIndex={isMobileSidebarOpen ? 0 : -1}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                setIsMobileSidebarOpen(false);
+              }
+            }}
+            aria-label="Dong sidebar"
+          />
           {/*====== */}
           {/* Start right Content here */}
           {/*====== */}

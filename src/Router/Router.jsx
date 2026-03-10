@@ -12,7 +12,7 @@ const Products = lazy(() => import("../Admin/Pages/Products/Products.jsx"));
 const AddProduct = lazy(() => import("../Admin/Pages/Products/AddProduct.jsx"));
 const Detail_Product = lazy(() => import("../Admin/Pages/Products/Detail.jsx"));
 const UpdateProduct = lazy(() => import("../Admin/Pages/Products/UpdateProduct.jsx"));
-const Customers = lazy(() => import("../Admin/Pages/User/Customers.jsx"));
+const AdminUsers = lazy(() => import("../Admin/Pages/User/AdminUsers.jsx"));
 const Orders = lazy(() => import("../Admin/Pages/Orders/Orders.jsx"));
 const Order_Detail = lazy(() => import("../Admin/Pages/Orders/Order_Detail.jsx"));
 const Profile = lazy(() => import("../Admin/Pages/Profile.jsx"));
@@ -50,8 +50,8 @@ const Router = () => {
         <Route path="addproduct" element={<Suspense fallback={<PageSpinner />}><AddProduct /></Suspense>} />
         <Route path="categories" element={<Suspense fallback={<PageSpinner />}><Categories /></Suspense>} />
         <Route path="product_detail/:id" element={<Suspense fallback={<PageSpinner />}><Detail_Product /></Suspense>} />
-        <Route path="customers" element={<Suspense fallback={<PageSpinner />}><Customers /></Suspense>} />
-        <Route path="customers/:id" element={<Suspense fallback={<PageSpinner />}><Customers /></Suspense>} />
+        <Route path="admins" element={<Suspense fallback={<PageSpinner />}><AdminUsers /></Suspense>} />
+        <Route path="admins/:id" element={<Suspense fallback={<PageSpinner />}><AdminUsers /></Suspense>} />
         <Route path="order" element={<Suspense fallback={<PageSpinner />}><Orders /></Suspense>} />
         <Route path="order_detail/:id" element={<Suspense fallback={<PageSpinner />}><Order_Detail /></Suspense>} />
         <Route path="profile" element={<Suspense fallback={<PageSpinner />}><Profile /></Suspense>} />

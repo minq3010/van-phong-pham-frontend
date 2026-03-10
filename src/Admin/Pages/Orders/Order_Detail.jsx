@@ -14,6 +14,29 @@ const Order_Detail = () => {
   const [status, setStatus] = useState();
   const { handleSubmit } = useForm();
   const idAdmin = JSON.parse(localStorage.getItem("user"));
+  const getOrderSourceMeta = (order) => {
+    const source =
+      order?.orderSource ||
+      (order?.handledBy
+        ? "manual_entry"
+        : order?.userId
+          ? "customer_self_service"
+          : "manual_entry");
+
+    return source === "manual_entry"
+      ? {
+          label: "Đơn tạo",
+          description: "Đơn do admin / manager tạo trực tiếp trong hệ thống.",
+          className: "bg-info-subtle text-info",
+        }
+      : {
+          label: "Khách tự mua",
+          description: "Đơn phát sinh từ khách hàng tự đặt mua.",
+          className: "bg-success-subtle text-success",
+        };
+  };
+
+  const orderSourceMeta = getOrderSourceMeta(data);
   const onSubmitUpdate = () => {
     const value = {
       status,
@@ -244,12 +267,41 @@ const Order_Detail = () => {
             <div className="card-body">
               <ul className="list-unstyled vstack gap-2 fs-15 mb-0">
                 <li className=" fs-14">Tên người mua : {data.customerName}</li>
+                <li>
+                  Nguồn đơn : <span className={`badge ${orderSourceMeta.className}`}>{orderSourceMeta.label}</span>
+                </li>
+                <li>
+                  Loại khách hàng : {data.customerType === "wholesale" ? "Khách sỉ / doanh nghiệp" : "Khách lẻ"}
+                </li>
                 <li>Số điện thoại : {data.phone}</li>
+                <li>Email : {data.email || "Không có"}</li>
                 <li>Địa chỉ : {data.address}</li>
                 <li>Ghi chú : {data.note}</li>
+                <li>Ghi chú nguồn đơn : {orderSourceMeta.description}</li>
               </ul>
             </div>
           </div>
+
+          {data.invoiceRequested && (
+            <div className="card">
+              <div className="card-header">
+                <h5 className="card-title mb-0">
+                  <i className="ri-file-list-3-line align-middle me-1 text-muted" />
+                  Thông tin hóa đơn
+                </h5>
+              </div>
+              <div className="card-body">
+                <ul className="list-unstyled vstack gap-2 fs-15 mb-0">
+                  <li>Tên công ty : {data.invoiceInfo?.companyName}</li>
+                  <li>Mã số thuế : {data.invoiceInfo?.taxCode}</li>
+                  <li>Email nhận hóa đơn : {data.invoiceInfo?.invoiceEmail || "Không có"}</li>
+                  <li>Địa chỉ xuất hóa đơn : {data.invoiceInfo?.invoiceAddress}</li>
+                  <li>Ghi chú hóa đơn : {data.invoiceInfo?.note || "Không có"}</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           <div className="card">
             <div className="card-header">
               <h5 className="card-title mb-0">

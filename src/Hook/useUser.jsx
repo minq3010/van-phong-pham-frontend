@@ -7,7 +7,7 @@ const useUpdateUser = () => {
   const { mutate, isLoading } = useMutation({
     mutationFn: ({ id, data }) => updateUsers(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       message.success("User update successfully");
     },
     onError: () => {
@@ -21,7 +21,7 @@ const useAddUser = () => {
   const { mutate, isLoading } = useMutation({
     mutationFn: (data) => addUsers(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
         message.success("User create successfully");
     },
     onError: (error) => {

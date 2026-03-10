@@ -61,11 +61,17 @@ const AddProduct = () => {
   });
 
   const onSubmit = (values) => {
+    // Kiểm tra ảnh trước khi submit
+    if (fileList.length < 1) {
+      message.error("Vui lòng upload ít nhất 1 ảnh sản phẩm!");
+      return;
+    }
+
     const productData = {
       ...values,
-      imageUrl: fileList[0].url || imageUrl,
+      imageUrl: fileList[0]?.url || imageUrl || "",
       caterori: values.caterori,
-      abumImage: fileList.map((item) => item.url),
+      abumImage: fileList.map((item) => item.url).filter(Boolean),
       status: status,
       createdBy: idAdmin._id,
     };
@@ -75,7 +81,7 @@ const AddProduct = () => {
 
   const validateFileList = () => {
     if (fileList.length < 1) {
-      return Promise.reject(new Error("Please upload at least 5 images"));
+      return Promise.reject(new Error("Vui lòng upload ít nhất 1 ảnh"));
     }
     return Promise.resolve();
   };
@@ -86,13 +92,12 @@ const AddProduct = () => {
     // Nếu upload thành công, cập nhật URL
     newFileList = newFileList.map((file) => {
       if (file.response) {
-        file.url = file.response.url; // URL trả về từ server
+        file.url = file.response.secure_url || file.response.url; // URL trả về từ Cloudinary
       }
       return file;
     });
 
     setFileList(newFileList);
-    // setImg(!img);
   };
 
   if (isCategory) {
@@ -128,6 +133,7 @@ const AddProduct = () => {
               </div>
               <div className="col-span-10">
                 <Form.Item
+                  name="abumImage"
                   className="col-span-10 mt-4"
                   rules={[
                     {
@@ -187,7 +193,7 @@ const AddProduct = () => {
                     action="https://api.cloudinary.com/v1_1/dkrcsuwbc/image/upload"
                     data={{ upload_preset: "image1" }}
                   >
-                    {fileList.length >= 1 && (
+                    {fileList.length >= 1 && fileList[0]?.url && (
                       <img
                         draggable={false}
                         src={fileList[0].url}

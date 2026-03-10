@@ -94,6 +94,11 @@ export const user = async (page, search = "") => {
   const res = await Axios.get(`/user?${param.toString()}`);
   return res.data;
 };
+
+export const getOrderCustomers = async () => {
+  const res = await Axios.get(`/user?page=1&limit=200`);
+  return res.data;
+};
 export const detailUser = async () => {
   const { data: user } = useAuth();
   const res = await Axios.get(`api/users/${user.id}`);
@@ -123,9 +128,17 @@ export const getOrdersAdmin = async ( filters = {}) => {
   const params = new URLSearchParams({
     ...(filters.search && { search: filters.search }),
     ...(filters.statusOrder && { status: filters.statusOrder }),
-    ...(filters.paymen && { payment: filters.paymen }),
+    ...((filters.payment || filters.paymen) && {
+      payment: filters.payment || filters.paymen,
+    }),
+    ...(filters.sourceOrder && { source: filters.sourceOrder }),
   });
   const res = await Axios.get(`/orders/?${params.toString()}`);
+  return res.data;
+};
+
+export const createAdminOrder = async (data) => {
+  const res = await Axios.post(`/order`, data);
   return res.data;
 };
 
