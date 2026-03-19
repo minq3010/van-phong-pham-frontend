@@ -141,6 +141,12 @@ const Layout = () => {
       label: "Đơn hàng",
     },
     {
+      to: "/wholesale-orders",
+      match: "Wholesale-orders",
+      icon: "ri-hand-coin-line",
+      label: "Bán sỉ",
+    },
+    {
       to: "/categories",
       match: "Categories",
       icon: "ri-folders-line",

@@ -49,6 +49,13 @@ const Detail = () => {
       key: "price",
       render: (text) => <FormatPrice price={text} />,
     },
+    {
+      title: "Wholesale",
+      dataIndex: "priceWholesale",
+      key: "priceWholesale",
+      render: (text) =>
+        text ? <FormatPrice price={text} /> : "Chưa có",
+    },
 
     {
       title: "Quantity",
@@ -61,6 +68,7 @@ const Detail = () => {
 
     quantity: item?.quantity,
     price: item?.price,
+    priceWholesale: item?.priceWholesale,
   }));
 
   return (
@@ -196,12 +204,28 @@ const Detail = () => {
                             "Chưa có giá"
                           )}
                         </h3>
+                        <div className="text-muted mt-2">
+                          Giá sỉ: {product?.priceWholesale ? (
+                            <FormatPrice price={product.priceWholesale} />
+                          ) : (
+                            "Chưa có"
+                          )}
+                        </div>
                       </div>
                     ) : (
-                      <h4 className="text-xl">
-                        Giá:{" "}
-                        {product?.price ? <FormatPrice price={product.price} /> : "Chưa có giá"}
-                      </h4>
+                      <div>
+                        <h4 className="text-xl">
+                          Giá:{" "}
+                          {product?.price ? <FormatPrice price={product.price} /> : "Chưa có giá"}
+                        </h4>
+                        <div className="text-muted mt-2">
+                          Giá sỉ: {product?.priceWholesale ? (
+                            <FormatPrice price={product.priceWholesale} />
+                          ) : (
+                            "Chưa có"
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                   <Table columns={columns} dataSource={data} />

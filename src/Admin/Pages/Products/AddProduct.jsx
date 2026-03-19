@@ -129,7 +129,7 @@ const AddProduct = () => {
           onFinish={onSubmit}
           layout="vertical"
           initialValues={{
-            variants: [{ color: null, price: "", quantity: "" }],
+            variants: [{ color: null, price: "", priceWholesale: "", quantity: "" }],
           }}
         >
           <section
@@ -431,7 +431,7 @@ const AddProduct = () => {
                   form.setFieldsValue({
                     variants: [
                       ...(form.getFieldValue("variants") || []),
-                      { color: null, price: "", quantity: "" },
+                      { color: null, price: "", priceWholesale: "", quantity: "" },
                     ],
                   })
                 }
@@ -494,6 +494,22 @@ const AddProduct = () => {
                           ]}
                         >
                           <Input type="number" placeholder="Giá" />
+                        </Form.Item>
+
+                        {/* Giá sỉ */}
+                        <Form.Item
+                          name={[name, "priceWholesale"]}
+                          rules={[
+                            { required: true, message: "Nhập giá sỉ" },
+                            {
+                              validator(_, value) {
+                                if (value > 0) return Promise.resolve();
+                                return Promise.reject("Giá sỉ phải lớn hơn 0");
+                              },
+                            },
+                          ]}
+                        >
+                          <Input type="number" placeholder="Giá sỉ" />
                         </Form.Item>
 
                         {/* Số lượng */}

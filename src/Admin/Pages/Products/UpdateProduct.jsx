@@ -99,7 +99,10 @@ const UpdateProduct = () => {
         origin: product.origin || "",
         description: product.description || "",
         quantity: product.quantity || "",
-        variants: product.variants,
+        variants: (product.variants || []).map((variant) => ({
+          ...variant,
+          priceWholesale: variant?.priceWholesale ?? "",
+        })),
       });
 
       // Set ảnh từ bumImage (album images)
@@ -426,7 +429,7 @@ const UpdateProduct = () => {
                   form.setFieldsValue({
                     variants: [
                       ...(form.getFieldValue("variants") || []),
-                      { color: null, price: "", quantity: "" },
+                      { color: null, price: "", priceWholesale: "", quantity: "" },
                     ],
                   })
                 }
@@ -489,6 +492,22 @@ const UpdateProduct = () => {
                           ]}
                         >
                           <Input type="number" placeholder="Giá" />
+                        </Form.Item>
+
+                        {/* Giá sỉ */}
+                        <Form.Item
+                          name={[name, "priceWholesale"]}
+                          rules={[
+                            { required: true, message: "Nhập giá sỉ" },
+                            {
+                              validator(_, value) {
+                                if (value > 0) return Promise.resolve();
+                                return Promise.reject("Giá sỉ phải lớn hơn 0");
+                              },
+                            },
+                          ]}
+                        >
+                          <Input type="number" placeholder="Giá sỉ" />
                         </Form.Item>
 
                         {/* Số lượng */}

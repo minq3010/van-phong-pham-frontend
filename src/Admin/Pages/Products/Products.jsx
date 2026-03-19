@@ -151,6 +151,13 @@ const Products = () => {
                               <FormatPrice price={item.price} />
                             </div>
                             <div className="text-muted small mt-1">
+                              Giá sỉ: {item.priceWholesale ? (
+                                <FormatPrice price={item.priceWholesale} />
+                              ) : (
+                                "Chưa có"
+                              )}
+                            </div>
+                            <div className="text-muted small mt-1">
                               Giảm giá: {item.discount || 0}%
                             </div>
                           </td>

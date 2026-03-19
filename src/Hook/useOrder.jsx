@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import {
   createAdminOrder,
   detailOrder,
+  getOrderCustomers,
   getOrdersAdmin,
   getProducts,
   getVouchers,
@@ -78,6 +79,15 @@ const useOrderFormOptions = () => {
   };
 };
 
+const useOrderCustomers = () => {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["order-customers"],
+    queryFn: () => getOrderCustomers(),
+  });
+
+  return { data, isLoading, isError, error };
+};
+
 const useCreateOrderAdmin = () => {
   const queryClient = useQueryClient();
 
@@ -103,5 +113,6 @@ export {
   useCreateOrderAdmin,
   useOrderFormOptions,
   useStatusOrderAdmin,
+  useOrderCustomers,
 
 };

@@ -131,18 +131,7 @@ const Orders = () => {
             <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
               <div>
                 <h5 className="mb-1">Quản lý đơn hàng</h5>
-                <p className="text-muted mb-0">
-                  Theo dõi đơn hiện có và tạo nhanh đơn hàng cho khách ngay tại đây.
-                </p>
               </div>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => setIsCreateOrderOpen(true)}
-              >
-                <i className="ri-add-line align-bottom me-1" />
-                Tạo đơn hàng
-              </button>
             </div>
             <form
               onSubmit={(event) => {
