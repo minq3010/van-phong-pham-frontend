@@ -1,4 +1,4 @@
-import { Alert, Empty, Spin } from "antd";
+import { Alert, Empty, Modal, Spin, Switch } from "antd";
 import React, { useMemo, useState } from "react";
 import OrderForm from "./OrderForm";
 import { useOrderCustomers } from "../../../Hook/useOrder";
@@ -6,6 +6,8 @@ import { useOrderCustomers } from "../../../Hook/useOrder";
 const WholesaleOrder = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [sortByOrders, setSortByOrders] = useState(true);
   const { data, isLoading, isError, error } = useOrderCustomers();
 
   const customers = useMemo(() => {
@@ -38,6 +40,20 @@ const WholesaleOrder = () => {
     });
   }, [customers, searchTerm]);
 
+  const displayedCustomers = useMemo(() => {
+    const sorted = [...filteredCustomers];
+    if (sortByOrders) {
+      sorted.sort(
+        (a, b) => Number(b.orderCount || 0) - Number(a.orderCount || 0)
+      );
+      return sorted;
+    }
+
+    return sorted.sort((a, b) =>
+      (a.username || a.name || "").localeCompare(b.username || b.name || "")
+    );
+  }, [filteredCustomers, sortByOrders]);
+
   const selectedCustomer = useMemo(
     () => customers.find((item) => item._id === selectedCustomerId),
     [customers, selectedCustomerId]
@@ -56,12 +72,9 @@ const WholesaleOrder = () => {
     setSelectedCustomerId("");
   };
 
-  const handleClearSearch = () => {
-    setSearchTerm("");
-  };
-
   const handleSelectCustomer = (customerId) => {
     setSelectedCustomerId(customerId);
+    setIsCustomerModalOpen(false);
   };
 
 
@@ -98,68 +111,35 @@ const WholesaleOrder = () => {
       <div className="col-12">
         <div className="card wholesale-form-card">
           <div className="card-body">
-            <div className="wholesale-panel-header">
+            <div className="wholesale-panel-header wholesale-panel-header-compact">
               <div>
-                <h5 className="mb-1">Tao don ban si</h5>
+                <h5 className="mb-1">Tạo đơn bán sỉ</h5>
                 <p className="text-muted mb-0">
-                  Tim nhanh va chon khach hang de tu dien thong tin.
+                  Chọn khách hàng và tạo đơn nhanh theo giá sỉ.
                 </p>
               </div>
-              <span className="wholesale-panel-chip">{filteredCustomers.length} khach</span>
+              <div className="d-flex align-items-center gap-2">
+                <span className="wholesale-panel-chip">{customers.length} khách</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => setIsCustomerModalOpen(true)}
+                >
+                  Chọn khách hàng
+                </button>
+              </div>
             </div>
 
             {customers.length === 0 ? (
-              <Empty description="Chua co khach hang de tao don ban si" />
+              <Empty description="Chưa có khách hàng để tạo đơn bán sỉ" />
             ) : (
-              <div className="row g-3 align-items-end mb-4">
-                <div className="col-lg-4">
-                  <label className="form-label">Tim khach hang</label>
-                  <div className="wholesale-search">
-                    <i className="ri-search-line" />
-                    <input
-                      type="text"
-                      className="form-control wholesale-search-input"
-                      placeholder="Ten, SDT, email..."
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                    />
-                    {searchTerm && (
-                      <button
-                        type="button"
-                        className="wholesale-clear-btn"
-                        onClick={handleClearSearch}
-                      >
-                        Xoa
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="col-lg-5">
-                  <label className="form-label">Chon khach hang</label>
-                  <select
-                    className="form-control"
-                    value={selectedCustomerId}
-                    onChange={(event) => handleSelectCustomer(event.target.value)}
-                  >
-                    <option value="">Chon khach hang</option>
-                    {filteredCustomers.map((item) => (
-                      <option key={item._id} value={item._id}>
-                        {item.username || item.name || "Khach hang"} - {item.phone || "Chua co SDT"}
-                      </option>
-                    ))}
-                  </select>
-                  {filteredCustomers.length === 0 && (
-                    <div className="wholesale-empty">Khong tim thay khach hang phu hop.</div>
-                  )}
-                </div>
-
-                <div className="col-lg-3">
-                  <label className="form-label">Thong tin chon</label>
-                  <div className="wholesale-compact-summary">
+              <div className="row g-3 align-items-center mb-4">
+                <div className="col-lg-8">
+                  <label className="form-label">Khách hàng</label>
+                  <div className="wholesale-compact-summary wholesale-compact-summary-balanced">
                     <div>
-                      <strong>{prefillCustomer?.customerName || "Chua chon"}</strong>
-                      <span>{prefillCustomer?.phone || "Chua co SDT"}</span>
+                      <strong>{prefillCustomer?.customerName || "Chưa chọn"}</strong>
+                      <span>{prefillCustomer?.phone || "Chưa có SĐT"}</span>
                     </div>
                     {selectedCustomer && (
                       <button
@@ -167,9 +147,23 @@ const WholesaleOrder = () => {
                         className="btn btn-sm btn-outline-secondary"
                         onClick={handleClearCustomer}
                       >
-                        Xoa
+                        Xóa
                       </button>
                     )}
+                  </div>
+                  <div className="text-muted small mt-2 wholesale-summary-meta">
+                    Ưu tiên khách có nhiều đơn hàng nhất để phục vụ nhanh.
+                  </div>
+                </div>
+                <div className="col-lg-4">
+                  <div className="border rounded-3 p-3 bg-light h-100 wholesale-status-card">
+                    <div className="text-muted small">Trạng thái chọn</div>
+                    <div className="fw-semibold">
+                      {selectedCustomer ? "Đã chọn" : "Chưa chọn"}
+                    </div>
+                    <div className="text-muted small">
+                      {prefillCustomer?.email || "Chưa có email"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -182,11 +176,69 @@ const WholesaleOrder = () => {
               prefillCustomer={prefillCustomer}
               userId={selectedCustomerId || null}
               showSubmit
-              submitLabel="Tao don ban si"
+              submitLabel="Tạo đơn bán sỉ"
             />
           </div>
         </div>
       </div>
+
+      <Modal
+        title="Danh sách khách hàng"
+        open={isCustomerModalOpen}
+        onCancel={() => setIsCustomerModalOpen(false)}
+        onOk={() => setIsCustomerModalOpen(false)}
+        width={760}
+        okText="Đóng"
+        cancelButtonProps={{ style: { display: "none" } }}
+      >
+        <div className="d-flex flex-wrap justify-content-between gap-3 mb-3">
+          <div className="wholesale-search flex-grow-1">
+            <i className="ri-search-line" />
+            <input
+              type="text"
+              className="form-control wholesale-search-input"
+              placeholder="Tìm theo tên, SĐT, email..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <span className="text-muted">Sắp xếp theo số đơn</span>
+            <Switch checked={sortByOrders} onChange={setSortByOrders} />
+          </div>
+        </div>
+
+        {displayedCustomers.length === 0 ? (
+          <Empty description="Không tìm thấy khách hàng phù hợp." />
+        ) : (
+          <div className="d-flex flex-column gap-2">
+            {displayedCustomers.map((item) => (
+              <button
+                key={item._id}
+                type="button"
+                className={`border rounded-3 p-3 text-start wholesale-customer-row ${
+                  item._id === selectedCustomerId ? "is-active" : ""
+                }`}
+                onClick={() => handleSelectCustomer(item._id)}
+              >
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div className="fw-semibold">
+                      {item.username || item.name || "Khách hàng"}
+                    </div>
+                    <div className="text-muted small">
+                      {item.phone || "Chưa có SĐT"} · {item.email || "Chưa có email"}
+                    </div>
+                  </div>
+                  <span className="badge bg-primary-subtle text-primary">
+                    {item.orderCount || 0} đơn
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

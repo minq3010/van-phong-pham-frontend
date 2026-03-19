@@ -94,7 +94,7 @@ export const user = async (page, search = "") => {
 };
 
 export const getOrderCustomers = async () => {
-  const res = await Axios.get(`/user?page=1&limit=200`);
+  const res = await Axios.get(`/user?page=1&limit=200&includeOrderCount=1`);
   return res.data;
 };
 export const detailUser = async () => {

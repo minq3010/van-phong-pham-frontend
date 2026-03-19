@@ -205,6 +205,11 @@ Input, textarea : 14px/1.6 '', Arial, sans-serif;
   margin-bottom: 18px;
 }
 
+.wholesale-panel-header-compact {
+  align-items: center;
+  margin-bottom: 14px;
+}
+
 .wholesale-panel-chip {
   background: var(--wholesale-soft);
   color: var(--wholesale-accent);
@@ -268,6 +273,48 @@ Input, textarea : 14px/1.6 '', Arial, sans-serif;
   border-radius: 12px;
   padding: 10px 12px;
   min-height: 54px;
+}
+
+.wholesale-compact-summary-balanced {
+  min-height: 64px;
+}
+
+.wholesale-status-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 64px;
+}
+
+.wholesale-summary-meta {
+  line-height: 1.4;
+}
+
+.wholesale-customer-row {
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wholesale-customer-row:hover {
+  border-color: #0ea5a6;
+  box-shadow: 0 10px 24px rgba(14, 165, 166, 0.15);
+}
+
+.wholesale-customer-row.is-active {
+  border-color: #0ea5a6;
+  background: rgba(14, 165, 166, 0.06);
+}
+
+.admin-order-compact-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.admin-order-compact-btn-tight {
+  padding: 1px 6px;
+  font-size: 11px;
+  line-height: 1.1;
 }
 
 .wholesale-compact-summary strong {

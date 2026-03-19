@@ -107,6 +107,8 @@ const OrderForm = ({
   const { mutate, isLoading: isCreating } = useCreateOrderAdmin();
   const effectiveCustomerType = forceCustomerType || formData.customerType;
   const isCustomerTypeLocked = lockCustomerType || Boolean(forceCustomerType);
+  const isAnyPopupOpen =
+    isCustomerModalOpen || isProductModalOpen || isInvoiceModalOpen;
 
   useEffect(() => {
     setFormData(createInitialFormState(defaultCustomerType));
@@ -122,6 +124,24 @@ const OrderForm = ({
       }));
     }
   }, [forceCustomerType, formData.customerType]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("admin:create-order-modal-toggle", {
+        detail: { open: isAnyPopupOpen },
+      })
+    );
+
+    return () => {
+      if (isAnyPopupOpen) {
+        window.dispatchEvent(
+          new CustomEvent("admin:create-order-modal-toggle", {
+            detail: { open: false },
+          })
+        );
+      }
+    };
+  }, [isAnyPopupOpen]);
 
   useEffect(() => {
     if (!prefillCustomer) {
@@ -363,7 +383,7 @@ const OrderForm = ({
         }
       }
 
-      const { product, variant } = getLinePricing(item);
+      const { product, variant, wholesalePrice } = getLinePricing(item);
 
       if (item.productId && !product) {
         lineErrors.productId = "Sản phẩm đã chọn không còn khả dụng.";
@@ -380,6 +400,16 @@ const OrderForm = ({
         Number(item.quantity) > Number(variant.quantity || 0)
       ) {
         lineErrors.quantity = `Tồn kho tối đa ${variant.quantity} sản phẩm.`;
+      }
+
+      if (
+        effectiveCustomerType === "wholesale" &&
+        item.productId &&
+        item.color &&
+        wholesalePrice <= 0 &&
+        !lineErrors.productId
+      ) {
+        lineErrors.productId = "Sản phẩm chưa có giá sỉ.";
       }
 
       return lineErrors;
@@ -578,42 +608,42 @@ const OrderForm = ({
             <div className="border rounded-3 p-3 bg-white">
               <div className="d-flex justify-content-between align-items-start gap-2">
                 <div>
-                  <div className="text-muted">Thong tin khach hang</div>
+                  <div className="text-muted">Thông tin khách hàng</div>
                   <strong>
-                    {formData.customerName.trim() || "Chua nhap ten khach hang"}
+                    {formData.customerName.trim() || "Chưa nhập tên khách hàng"}
                   </strong>
                   <div className="text-muted">
-                    {formData.phone.trim() || "Chua co so dien thoai"}
+                    {formData.phone.trim() || "Chưa có số điện thoại"}
                   </div>
                   <div className="text-muted">
-                    {formData.address.trim() || "Chua co dia chi"}
+                    {formData.address.trim() || "Chưa có địa chỉ"}
                   </div>
                 </div>
                 <button
                   type="button"
-                  className="btn btn-sm btn-outline-primary"
+                  className="btn btn-sm btn-outline-primary admin-order-compact-btn admin-order-compact-btn-tight"
                   onClick={() => setIsCustomerModalOpen(true)}
                 >
-                  Cap nhat
+                  Cập nhật
                 </button>
               </div>
               {errors.customerName || errors.phone || errors.address ? (
                 <div className="text-danger mt-2 text-sm">
-                  Vui long cap nhat thong tin bat buoc.
+                  Vui lòng cập nhật thông tin bắt buộc.
                 </div>
               ) : null}
             </div>
 
             <div className="d-flex justify-content-between align-items-center border rounded-3 p-2 bg-white mt-3">
               <span className="text-muted">
-                Hoa don VAT: {formData.invoiceRequested ? "Co" : "Khong"}
+                Hóa đơn VAT: {formData.invoiceRequested ? "Có" : "Không"}
               </span>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-primary"
+                className="btn btn-sm btn-outline-primary admin-order-compact-btn admin-order-compact-btn-tight"
                 onClick={() => setIsCustomerModalOpen(true)}
               >
-                Cap nhat
+                Cập nhật
               </button>
             </div>
           </div>
@@ -637,7 +667,6 @@ const OrderForm = ({
                 Chọn sản phẩm
               </button>
             </div>
-
             {errors.productsMessage && (
               <div className="alert alert-danger py-2 px-3 mb-2 admin-order-products-alert">
                 {errors.productsMessage}
@@ -704,18 +733,18 @@ const OrderForm = ({
       </div>
 
       <Modal
-        title="Thong tin khach hang"
+        title="Thông tin khách hàng"
         open={isCustomerModalOpen}
         onCancel={() => setIsCustomerModalOpen(false)}
         onOk={() => setIsCustomerModalOpen(false)}
         width={720}
-        okText="Luu"
-        cancelText="Dong"
+        okText="Lưu"
+        cancelText="Đóng"
       >
         <div className="row g-3">
           <div className="col-md-6 admin-order-form-group">
             <label className="form-label admin-order-form-label">
-              Loai khach hang
+              Loại khách hàng
             </label>
             <select
               className={joinControlClassName(
@@ -726,13 +755,13 @@ const OrderForm = ({
               onChange={(event) => updateFormField("customerType", event.target.value)}
               disabled={isCustomerTypeLocked}
             >
-              <option value="retail">Khach le</option>
-              <option value="wholesale">Khach si / doanh nghiep</option>
+              <option value="retail">Khách lẻ</option>
+              <option value="wholesale">Khách sỉ / doanh nghiệp</option>
             </select>
           </div>
 
           <div className="col-md-6 admin-order-form-group">
-            <label className="form-label admin-order-form-label">Ten khach hang</label>
+            <label className="form-label admin-order-form-label">Tên khách hàng</label>
             <input
               className={joinControlClassName(
                 "form-control admin-order-form-control",
@@ -740,7 +769,7 @@ const OrderForm = ({
               )}
               value={formData.customerName}
               onChange={(event) => updateFormField("customerName", event.target.value)}
-              placeholder="Nhap ten khach hang"
+              placeholder="Nhập tên khách hàng"
             />
             {errors.customerName && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -750,7 +779,7 @@ const OrderForm = ({
           </div>
 
           <div className="col-md-6 admin-order-form-group">
-            <label className="form-label admin-order-form-label">So dien thoai</label>
+            <label className="form-label admin-order-form-label">Số điện thoại</label>
             <input
               type="tel"
               inputMode="numeric"
@@ -761,7 +790,7 @@ const OrderForm = ({
               )}
               value={formData.phone}
               onChange={(event) => updateFormField("phone", event.target.value)}
-              placeholder="Nhap so dien thoai"
+              placeholder="Nhập số điện thoại"
             />
             {errors.phone && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -771,7 +800,7 @@ const OrderForm = ({
           </div>
 
           <div className="col-md-6 admin-order-form-group">
-            <label className="form-label admin-order-form-label">Email lien he</label>
+            <label className="form-label admin-order-form-label">Email liên hệ</label>
             <input
               type="email"
               className={joinControlClassName(
@@ -780,7 +809,7 @@ const OrderForm = ({
               )}
               value={formData.email}
               onChange={(event) => updateFormField("email", event.target.value)}
-              placeholder="Nhap email lien he"
+              placeholder="Nhập email liên hệ"
             />
             {errors.email && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -790,7 +819,7 @@ const OrderForm = ({
           </div>
 
           <div className="col-12 admin-order-form-group">
-            <label className="form-label admin-order-form-label">Dia chi giao hang</label>
+            <label className="form-label admin-order-form-label">Địa chỉ giao hàng</label>
             <textarea
               className={joinControlClassName(
                 "form-control admin-order-form-control admin-order-textarea",
@@ -799,7 +828,7 @@ const OrderForm = ({
               rows={2}
               value={formData.address}
               onChange={(event) => updateFormField("address", event.target.value)}
-              placeholder="Nhap dia chi giao hang"
+              placeholder="Nhập địa chỉ giao hàng"
             />
             {errors.address && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -809,7 +838,7 @@ const OrderForm = ({
           </div>
 
           <div className="col-md-6 admin-order-form-group">
-            <label className="form-label admin-order-form-label">Thanh toan</label>
+            <label className="form-label admin-order-form-label">Thanh toán</label>
             <select
               className="form-control admin-order-form-control"
               value={formData.payment}
@@ -830,7 +859,7 @@ const OrderForm = ({
               value={formData.voucherId}
               onChange={(event) => updateFormField("voucherId", event.target.value)}
             >
-              <option value="">Khong ap dung</option>
+              <option value="">Không áp dụng</option>
               {availableVouchers.map((item) => (
                 <option key={item._id} value={item._id}>
                   {item.code} - {item.discount}%
@@ -840,13 +869,13 @@ const OrderForm = ({
           </div>
 
           <div className="col-12 admin-order-form-group">
-            <label className="form-label admin-order-form-label">Ghi chu</label>
+            <label className="form-label admin-order-form-label">Ghi chú</label>
             <textarea
               className="form-control admin-order-form-control admin-order-textarea"
               rows={2}
               value={formData.note}
               onChange={(event) => updateFormField("note", event.target.value)}
-              placeholder="Ghi chu giao hang"
+              placeholder="Ghi chú giao hàng"
             />
           </div>
         </div>
@@ -860,37 +889,37 @@ const OrderForm = ({
             onChange={(event) => handleInvoiceToggle(event.target.checked)}
           />
           <label className="form-check-label" htmlFor="invoiceRequestedModal">
-            Xuat hoa don VAT
+            Xuất hóa đơn VAT
           </label>
         </div>
 
         {formData.invoiceRequested && (
           <div className="d-flex justify-content-between align-items-center border rounded-3 p-2 bg-white">
-            <span className="text-muted">Thong tin hoa don</span>
+            <span className="text-muted">Thông tin hóa đơn</span>
             <button
               type="button"
               className="btn btn-sm btn-outline-primary"
               onClick={() => setIsInvoiceModalOpen(true)}
             >
-              Cap nhat
+              Cập nhật
             </button>
           </div>
         )}
       </Modal>
 
       <Modal
-        title="San pham trong don"
+        title="Sản phẩm trong đơn"
         open={isProductModalOpen}
         onCancel={() => setIsProductModalOpen(false)}
         onOk={() => setIsProductModalOpen(false)}
         width={980}
-        okText="Dong"
+        okText="Đóng"
         cancelButtonProps={{ style: { display: "none" } }}
       >
         <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
           <div>
             <p className="text-muted mb-0">
-              Them san pham, chon bien the va so luong phu hop.
+              Thêm sản phẩm, chọn biến thể và số lượng phù hợp.
             </p>
           </div>
           <button
@@ -899,7 +928,7 @@ const OrderForm = ({
             onClick={handleAddProduct}
           >
             <i className="ri-add-line me-1" />
-            Them san pham
+            Thêm sản phẩm
           </button>
         </div>
 
@@ -917,7 +946,7 @@ const OrderForm = ({
               >
                 <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                   <span className="badge bg-secondary-subtle text-secondary">
-                    Dong san pham #{index + 1}
+                    Dòng sản phẩm #{index + 1}
                   </span>
                   <span
                     className={`badge ${
@@ -926,14 +955,14 @@ const OrderForm = ({
                         : "bg-danger-subtle text-danger"
                     }`}
                   >
-                    Ton kho: {availableStock}
+                    Tồn kho: {availableStock}
                   </span>
                 </div>
 
                 <div className="row g-3 align-items-start admin-order-product-grid">
                   <div className="col-lg-5 col-md-12">
                     <label className="form-label admin-order-form-label">
-                      San pham
+                      Sản phẩm
                     </label>
                     <select
                       className={joinControlClassName(
@@ -945,7 +974,7 @@ const OrderForm = ({
                         handleProductChange(index, event.target.value)
                       }
                     >
-                      <option value="">Chon san pham</option>
+                      <option value="">Chọn sản phẩm</option>
                       {availableProducts.map((product) => (
                         <option key={product._id} value={product._id}>
                           {product.name}
@@ -961,7 +990,7 @@ const OrderForm = ({
 
                   <div className="col-lg-3 col-md-6">
                     <label className="form-label admin-order-form-label">
-                      Bien the
+                      Biến thể
                     </label>
                     <select
                       className={joinControlClassName(
@@ -974,13 +1003,13 @@ const OrderForm = ({
                       }
                       disabled={!item.productId}
                     >
-                      <option value="">Chon mau</option>
+                      <option value="">Chọn màu</option>
                       {variants.map((variant) => (
                         <option
                           key={`${variant.color}-${variant.quantity}`}
                           value={variant.color}
                         >
-                          {variant.color} - ton {variant.quantity}
+                          {variant.color} - tồn {variant.quantity}
                         </option>
                       ))}
                     </select>
@@ -993,7 +1022,7 @@ const OrderForm = ({
 
                   <div className="col-lg-2 col-md-3 col-6">
                     <label className="form-label admin-order-form-label">
-                      So luong
+                      Số lượng
                     </label>
                     <input
                       type="number"
@@ -1014,7 +1043,7 @@ const OrderForm = ({
                       </div>
                     ) : (
                       <div className="form-text admin-order-helper-text">
-                        Toi da {availableStock || 0}
+                        Tối đa {availableStock || 0}
                       </div>
                     )}
                   </div>
@@ -1025,20 +1054,20 @@ const OrderForm = ({
                       className="btn btn-outline-danger btn-sm w-100"
                       onClick={() => handleRemoveProduct(index)}
                     >
-                      Xoa
+                      Xóa
                     </button>
                   </div>
                 </div>
 
                 <div className="row g-2 mt-1 text-sm text-muted admin-order-price-row">
                   <div className="col-md-4">
-                    Gia goc: <strong><FormatPrice price={pricing.priceBeforeDis} /></strong>
+                    Giá gốc: <strong><FormatPrice price={pricing.priceBeforeDis} /></strong>
                   </div>
                   <div className="col-md-4">
-                    Sau giam SP: <strong><FormatPrice price={pricing.priceAfterDis} /></strong>
+                    Sau giảm SP: <strong><FormatPrice price={pricing.priceAfterDis} /></strong>
                   </div>
                   <div className="col-md-4">
-                    Thanh tien: <strong><FormatPrice price={pricing.lineTotal} /></strong>
+                    Thành tiền: <strong><FormatPrice price={pricing.lineTotal} /></strong>
                   </div>
                 </div>
               </div>
@@ -1048,18 +1077,18 @@ const OrderForm = ({
       </Modal>
 
       <Modal
-        title="Thong tin hoa don"
+        title="Thông tin hóa đơn"
         open={isInvoiceModalOpen}
         onCancel={() => setIsInvoiceModalOpen(false)}
         onOk={() => setIsInvoiceModalOpen(false)}
         width={720}
-        okText="Luu"
-        cancelText="Dong"
+        okText="Lưu"
+        cancelText="Đóng"
       >
         <div className="row g-3">
           <div className="col-12 admin-order-form-group">
             <label className="form-label admin-order-form-label">
-              Ten cong ty / don vi
+              Tên công ty / đơn vị
             </label>
             <input
               className={joinControlClassName(
@@ -1070,7 +1099,7 @@ const OrderForm = ({
               onChange={(event) =>
                 updateInvoiceField("companyName", event.target.value)
               }
-              placeholder="Nhap ten cong ty"
+              placeholder="Nhập tên công ty"
             />
             {errors.invoiceInfo.companyName && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -1080,7 +1109,7 @@ const OrderForm = ({
           </div>
 
           <div className="col-md-6 admin-order-form-group">
-            <label className="form-label admin-order-form-label">Ma so thue</label>
+            <label className="form-label admin-order-form-label">Mã số thuế</label>
             <input
               className={joinControlClassName(
                 "form-control admin-order-form-control",
@@ -1088,7 +1117,7 @@ const OrderForm = ({
               )}
               value={formData.invoiceInfo.taxCode}
               onChange={(event) => updateInvoiceField("taxCode", event.target.value)}
-              placeholder="Nhap ma so thue"
+              placeholder="Nhập mã số thuế"
             />
             {errors.invoiceInfo.taxCode && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -1099,7 +1128,7 @@ const OrderForm = ({
 
           <div className="col-md-6 admin-order-form-group">
             <label className="form-label admin-order-form-label">
-              Email nhan hoa don
+              Email nhận hóa đơn
             </label>
             <input
               type="email"
@@ -1111,7 +1140,7 @@ const OrderForm = ({
               onChange={(event) =>
                 updateInvoiceField("invoiceEmail", event.target.value)
               }
-              placeholder="Nhap email nhan hoa don"
+              placeholder="Nhập email nhận hóa đơn"
             />
             {errors.invoiceInfo.invoiceEmail && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -1122,7 +1151,7 @@ const OrderForm = ({
 
           <div className="col-12 admin-order-form-group">
             <label className="form-label admin-order-form-label">
-              Dia chi xuat hoa don
+              Địa chỉ xuất hóa đơn
             </label>
             <textarea
               className={joinControlClassName(
@@ -1134,7 +1163,7 @@ const OrderForm = ({
               onChange={(event) =>
                 updateInvoiceField("invoiceAddress", event.target.value)
               }
-              placeholder="Nhap dia chi cong ty / hoa don"
+              placeholder="Nhập địa chỉ công ty / hóa đơn"
             />
             {errors.invoiceInfo.invoiceAddress && (
               <div className="invalid-feedback d-block admin-order-error-text">
@@ -1145,14 +1174,14 @@ const OrderForm = ({
 
           <div className="col-12 admin-order-form-group">
             <label className="form-label admin-order-form-label">
-              Ghi chu hoa don
+              Ghi chú hóa đơn
             </label>
             <textarea
               className="form-control admin-order-form-control admin-order-textarea"
               rows={2}
               value={formData.invoiceInfo.note}
               onChange={(event) => updateInvoiceField("note", event.target.value)}
-              placeholder="Thong tin them cho hoa don"
+              placeholder="Thông tin thêm cho hóa đơn"
             />
           </div>
         </div>
