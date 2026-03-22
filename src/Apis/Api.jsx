@@ -225,3 +225,82 @@ export const getCommentDetail = async (id) => {
   const res = await Axios.get(`/comment/${id}`);
   return res.data;
 };
+
+const getRequiredUserId = () => {
+  const currentUser = getStoredUser();
+
+  if (!currentUser?._id) {
+    throw new Error("Bạn cần đăng nhập để tiếp tục");
+  }
+
+  return currentUser._id;
+};
+
+export const getClientProducts = async () => {
+  const res = await Axios.get(`/products`);
+  return res.data;
+};
+
+export const getClientCart = async () => {
+  const userId = getRequiredUserId();
+  const res = await Axios.get(`/cart/${userId}`);
+  return res.data;
+};
+
+export const addToClientCart = async ({ productId, quantity = 1, color = "Mặc định" }) => {
+  const userId = getRequiredUserId();
+  const res = await Axios.post(`/cart/${userId}`, {
+    productid: productId,
+    quantity,
+    color,
+  });
+  return res.data;
+};
+
+export const updateClientCartItem = async ({ cartItemId, quantity }) => {
+  const res = await Axios.patch(`/cart/${cartItemId}`, { quantity });
+  return res.data;
+};
+
+export const removeClientCartItem = async (cartItemId) => {
+  const res = await Axios.delete(`/cart/${cartItemId}`);
+  return res.data;
+};
+
+export const clearClientCart = async () => {
+  const userId = getRequiredUserId();
+  const res = await Axios.delete(`/carts/${userId}`);
+  return res.data;
+};
+
+export const createClientOrder = async (payload) => {
+  const user = getStoredUser();
+  const res = await Axios.post(`/order`, {
+    ...payload,
+    userId: user?._id || null,
+  });
+  return res.data;
+};
+
+export const getClientOrders = async () => {
+  const userId = getRequiredUserId();
+  const res = await Axios.get(`/order/user/${userId}`);
+  return res.data;
+};
+
+export const getClientProfile = async () => {
+  const userId = getRequiredUserId();
+  const res = await Axios.get(`/user/${userId}`);
+  return res.data;
+};
+
+export const updateClientProfile = async (data) => {
+  const userId = getRequiredUserId();
+  const res = await Axios.patch(`/user/${userId}`, data);
+  return res.data;
+};
+
+export const askClientChatbot = async (message) => {
+  const res = await Axios.post(`/chatbot`, { message });
+  return res.data;
+};

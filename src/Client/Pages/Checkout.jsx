@@ -74,7 +74,7 @@ const ClientCheckout = () => {
     const products = cartItems.map((item) => ({
       productId: item?.product?._id,
       quantity: Number(item.quantity || 1),
-      color: item?.color || "Mặc định",
+      color: item?.color || undefined,
     }));
 
     submitOrder({

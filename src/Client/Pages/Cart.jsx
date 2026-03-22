@@ -63,7 +63,13 @@ const ClientCart = () => {
   const finalTotal = Math.max(0, Number(totalPrice) - discountAmount);
 
   const handleDecrease = (item) => {
-    const nextQty = Math.max(1, Number(item.quantity || 1) - 1);
+    const nextQty = Number(item.quantity || 1) - 1;
+
+    if (nextQty <= 0) {
+      removeItem(item._id);
+      return;
+    }
+
     updateItem({ cartItemId: item._id, quantity: nextQty });
   };
 

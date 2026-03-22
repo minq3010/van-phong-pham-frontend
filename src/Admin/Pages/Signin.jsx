@@ -48,9 +48,8 @@ const Signin = () => {
       localStorage.setItem("user", JSON.stringify(authenticatedUser));
 
       if (!ALLOWED_ROLES.includes(authenticatedUser.role)) {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user");
-        message.error("Tài khoản này không có quyền truy cập trang quản trị");
+        message.success("Đăng nhập thành công");
+        navigate("/client/products");
         return;
       }
 
@@ -139,6 +138,12 @@ const Signin = () => {
         <button className="button-submit" type="submit">
           {isLoading && <Spin />} Sign In
         </button>
+        <p className="p text-center">
+          Bạn chưa có tài khoản?
+          <Link to="/client/signup" className="span">
+            Đăng ký ngay
+          </Link>
+        </p>
       </form>
     </div>
   );

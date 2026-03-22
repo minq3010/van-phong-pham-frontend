@@ -1,7 +1,8 @@
 import { Suspense, lazy } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import "../../node_modules/nprogress/nprogress.css";
 import PrivateRouter from "./PrivateRouter.jsx";
+import ClientPrivateRouter from "./ClientPrivateRouter.jsx";
 
 // Lazy load tất cả các page
 const LayoutAdmin = lazy(() => import("../Admin/Ui/Layout.jsx"));
@@ -24,6 +25,16 @@ const CommentListProduct = lazy(() => import("../Admin/Pages/Comment/CommentList
 const Error = lazy(() => import("../Ui/Error.jsx"));
 const FullScreenButton = lazy(() => import("../Admin/Ui/FullScreen.jsx"));
 const ForceChangePassword = lazy(() => import("../Admin/Pages/ForceChangePassword.jsx"));
+const ClientLayout = lazy(() => import("../Client/Ui/ClientLayout.jsx"));
+const ClientProducts = lazy(() => import("../Client/Pages/Products.jsx"));
+const ClientCart = lazy(() => import("../Client/Pages/Cart.jsx"));
+const ClientCheckout = lazy(() => import("../Client/Pages/Checkout.jsx"));
+const ClientOrdersHistory = lazy(() => import("../Client/Pages/OrdersHistory.jsx"));
+const ClientOrderDetail = lazy(() => import("../Client/Pages/OrderDetail.jsx"));
+const ClientProfile = lazy(() => import("../Client/Pages/Profile.jsx"));
+const ClientProductDetail = lazy(() => import("../Client/Pages/ProductDetail.jsx"));
+const ClientWishlist = lazy(() => import("../Client/Pages/Wishlist.jsx"));
+const ClientSignup = lazy(() => import("../Client/Pages/Signup.jsx"));
 
 // Spinner nhỏ dùng cho fallback từng page
 const PageSpinner = () => (
@@ -65,6 +76,29 @@ const Router = () => {
 
       <Route path="signin" element={<Suspense fallback={<PageSpinner />}><Signin /></Suspense>} />
       <Route path="signup" element={<Suspense fallback={<PageSpinner />}><Signup /></Suspense>} />
+      <Route path="client/signin" element={<Navigate to="/signin" replace />} />
+      <Route path="client/signup" element={<Suspense fallback={<PageSpinner />}><ClientSignup /></Suspense>} />
+      <Route
+        path="client"
+        element={
+          <ClientPrivateRouter>
+            <Suspense fallback={<PageSpinner />}>
+              <ClientLayout />
+            </Suspense>
+          </ClientPrivateRouter>
+        }
+      >
+        <Route index element={<Navigate to="products" replace />} />
+        <Route path="products" element={<Suspense fallback={<PageSpinner />}><ClientProducts /></Suspense>} />
+        <Route path="products/:id" element={<Suspense fallback={<PageSpinner />}><ClientProductDetail /></Suspense>} />
+        <Route path="cart" element={<Suspense fallback={<PageSpinner />}><ClientCart /></Suspense>} />
+        <Route path="checkout" element={<Suspense fallback={<PageSpinner />}><ClientCheckout /></Suspense>} />
+        <Route path="orders" element={<Suspense fallback={<PageSpinner />}><ClientOrdersHistory /></Suspense>} />
+        <Route path="orders/:id" element={<Suspense fallback={<PageSpinner />}><ClientOrderDetail /></Suspense>} />
+        <Route path="profile" element={<Suspense fallback={<PageSpinner />}><ClientProfile /></Suspense>} />
+        <Route path="wishlist" element={<Suspense fallback={<PageSpinner />}><ClientWishlist /></Suspense>} />
+      </Route>
+
       <Route path="force-change-password" element={<Suspense fallback={<PageSpinner />}><ForceChangePassword /></Suspense>} />
       <Route path="*" element={<Suspense fallback={<PageSpinner />}><Error /></Suspense>} />
     </Routes>

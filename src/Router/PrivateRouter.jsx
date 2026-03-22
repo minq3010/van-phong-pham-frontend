@@ -52,8 +52,7 @@ const PrivateRouter = (props) => {
   }
 
   if (!ALLOWED_ROLES.includes(user?.role)) {
-    clearStoredAuth();
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/client/products" replace />;
   }
 
   if (user?.mustChangePassword && location.pathname !== "/force-change-password") {
