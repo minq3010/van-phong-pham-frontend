@@ -5,6 +5,7 @@ import {
   useCreateOrderAdmin,
   useOrderFormOptions,
 } from "../../../Hook/useOrder";
+import { calculateVoucherDiscount } from "../../../utils/voucher.js";
 
 const PHONE_REGEX = /^\d{10}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -206,6 +207,8 @@ const OrderForm = ({
     return {
       product,
       variant,
+      wholesalePrice,
+      retailPrice,
       priceBeforeDis,
       priceAfterDis,
       lineTotal: priceAfterDis * Number(item.quantity || 0),
@@ -228,12 +231,7 @@ const OrderForm = ({
     0
   );
 
-  const voucherDiscount = selectedVoucher
-    ? Math.min(
-        Math.round((subtotal * Number(selectedVoucher.discount || 0)) / 100),
-        Number(selectedVoucher.maxPriceDis || subtotal)
-      )
-    : 0;
+  const voucherDiscount = calculateVoucherDiscount(selectedVoucher, subtotal);
 
   const grandTotal = Math.max(0, subtotal - voucherDiscount);
   const customerContactSummary = [formData.phone.trim(), formData.email.trim()]

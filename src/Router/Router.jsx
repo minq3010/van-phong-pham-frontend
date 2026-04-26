@@ -14,6 +14,7 @@ const AddProduct = lazy(() => import("../Admin/Pages/Products/AddProduct.jsx"));
 const Detail_Product = lazy(() => import("../Admin/Pages/Products/Detail.jsx"));
 const UpdateProduct = lazy(() => import("../Admin/Pages/Products/UpdateProduct.jsx"));
 const AdminUsers = lazy(() => import("../Admin/Pages/User/AdminUsers.jsx"));
+const ForgotPassword = lazy(() => import("../Admin/Pages/User/TwoStep.jsx"));
 const Orders = lazy(() => import("../Admin/Pages/Orders/Orders.jsx"));
 const WholesaleOrder = lazy(() => import("../Admin/Pages/Orders/WholesaleOrder.jsx"));
 const Order_Detail = lazy(() => import("../Admin/Pages/Orders/Order_Detail.jsx"));
@@ -46,8 +47,9 @@ const PageSpinner = () => (
 const Router = () => {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/client/products" replace />} />
       <Route
-        path="/"
+        path="/admin"
         element={
           <PrivateRouter>
             <Suspense fallback={<PageSpinner />}>
@@ -76,27 +78,34 @@ const Router = () => {
 
       <Route path="signin" element={<Suspense fallback={<PageSpinner />}><Signin /></Suspense>} />
       <Route path="signup" element={<Suspense fallback={<PageSpinner />}><Signup /></Suspense>} />
+      <Route path="emailpassword" element={<Suspense fallback={<PageSpinner />}><ForgotPassword /></Suspense>} />
       <Route path="client/signin" element={<Navigate to="/signin" replace />} />
       <Route path="client/signup" element={<Suspense fallback={<PageSpinner />}><ClientSignup /></Suspense>} />
       <Route
         path="client"
         element={
-          <ClientPrivateRouter>
-            <Suspense fallback={<PageSpinner />}>
-              <ClientLayout />
-            </Suspense>
-          </ClientPrivateRouter>
+          <Suspense fallback={<PageSpinner />}>
+            <ClientLayout />
+          </Suspense>
         }
       >
         <Route index element={<Navigate to="products" replace />} />
         <Route path="products" element={<Suspense fallback={<PageSpinner />}><ClientProducts /></Suspense>} />
         <Route path="products/:id" element={<Suspense fallback={<PageSpinner />}><ClientProductDetail /></Suspense>} />
-        <Route path="cart" element={<Suspense fallback={<PageSpinner />}><ClientCart /></Suspense>} />
-        <Route path="checkout" element={<Suspense fallback={<PageSpinner />}><ClientCheckout /></Suspense>} />
-        <Route path="orders" element={<Suspense fallback={<PageSpinner />}><ClientOrdersHistory /></Suspense>} />
-        <Route path="orders/:id" element={<Suspense fallback={<PageSpinner />}><ClientOrderDetail /></Suspense>} />
-        <Route path="profile" element={<Suspense fallback={<PageSpinner />}><ClientProfile /></Suspense>} />
-        <Route path="wishlist" element={<Suspense fallback={<PageSpinner />}><ClientWishlist /></Suspense>} />
+        <Route
+          element={
+            <ClientPrivateRouter>
+              <></>
+            </ClientPrivateRouter>
+          }
+        >
+          <Route path="cart" element={<Suspense fallback={<PageSpinner />}><ClientCart /></Suspense>} />
+          <Route path="checkout" element={<Suspense fallback={<PageSpinner />}><ClientCheckout /></Suspense>} />
+          <Route path="orders" element={<Suspense fallback={<PageSpinner />}><ClientOrdersHistory /></Suspense>} />
+          <Route path="orders/:id" element={<Suspense fallback={<PageSpinner />}><ClientOrderDetail /></Suspense>} />
+          <Route path="profile" element={<Suspense fallback={<PageSpinner />}><ClientProfile /></Suspense>} />
+          <Route path="wishlist" element={<Suspense fallback={<PageSpinner />}><ClientWishlist /></Suspense>} />
+        </Route>
       </Route>
 
       <Route path="force-change-password" element={<Suspense fallback={<PageSpinner />}><ForceChangePassword /></Suspense>} />

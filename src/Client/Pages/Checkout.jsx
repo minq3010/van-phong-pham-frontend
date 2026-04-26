@@ -8,9 +8,11 @@ import {
   createClientOrder,
   getClientCart,
   getClientProfile,
+  getClientVouchers,
 } from "../../Apis/Api.jsx";
 import { formatCurrency } from "../utils/format";
 import Breadcrumb from "../components/navigation/Breadcrumb.jsx";
+import { calculateVoucherDiscount } from "../../utils/voucher.js";
 
 const ClientCheckout = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const ClientCheckout = () => {
 
   const { data: profile } = useQuery(["client-profile-checkout"], getClientProfile);
   const { data: cartData, isLoading: isCartLoading } = useQuery(["client-cart"], getClientCart);
+  const { data: voucherResponse } = useQuery(["client-vouchers"], getClientVouchers);
 
   const cartItems = Array.isArray(cartData?.data) ? cartData.data : [];
 
@@ -64,6 +67,14 @@ const ClientCheckout = () => {
   });
 
   const totalPrice = cartData?.totalPrice || 0;
+  const vouchers = Array.isArray(voucherResponse)
+    ? voucherResponse
+    : Array.isArray(voucherResponse?.data)
+      ? voucherResponse.data
+      : [];
+  const selectedVoucher = vouchers.find((item) => item._id === voucherId) || null;
+  const discountAmount = calculateVoucherDiscount(selectedVoucher, totalPrice);
+  const finalTotal = Math.max(0, Number(totalPrice) - discountAmount);
 
   const onSubmit = (values) => {
     if (cartItems.length === 0) {
@@ -195,12 +206,20 @@ const ClientCheckout = () => {
         </div>
 
         <div className="mt-5 border-t pt-4">
-          {voucherId && (
-            <p className="mb-2 text-xs text-emerald-600">Đơn hàng sẽ áp dụng mã giảm giá đã chọn ở giỏ hàng.</p>
+          {selectedVoucher && (
+            <>
+              <p className="mb-2 text-xs text-emerald-600">
+                Đơn hàng đang áp dụng mã {selectedVoucher.code}.
+              </p>
+              <div className="mb-2 flex items-center justify-between text-sm text-emerald-700">
+                <span>Giảm giá</span>
+                <span>-{formatCurrency(discountAmount)}</span>
+              </div>
+            </>
           )}
           <div className="flex items-center justify-between text-base font-semibold text-blue-900">
             <span>Tổng cộng</span>
-            <span>{formatCurrency(totalPrice)}</span>
+            <span>{formatCurrency(finalTotal)}</span>
           </div>
         </div>
       </aside>

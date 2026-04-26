@@ -58,7 +58,7 @@ const Signin = () => {
         navigate("/force-change-password");
       } else {
         message.success("Thành công");
-        navigate("/");
+        navigate("/admin");
       }
     },
     onError: (error) => {

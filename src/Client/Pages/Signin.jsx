@@ -32,7 +32,7 @@ const ClientSignin = () => {
 
       if (response.user.role === "admin" || response.user.role === "manage") {
         message.success("Đăng nhập quản trị thành công");
-        navigate("/", { replace: true });
+        navigate("/admin", { replace: true });
         return;
       }
 
@@ -81,6 +81,12 @@ const ClientSignin = () => {
         >
           {isLoading ? "Đang xử lý..." : "Đăng nhập"}
         </button>
+
+        <div className="text-right">
+          <Link className="text-sm font-medium text-slate-700 hover:text-slate-900" to="/emailpassword">
+            Quên mật khẩu?
+          </Link>
+        </div>
       </form>
 
       <p className="mt-4 text-center text-sm text-slate-600">

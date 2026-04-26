@@ -77,7 +77,7 @@ const Products = () => {
               <div className="col-sm-auto">
                 <div className="d-flex gap-1 flex-wrap">
                   <Link
-                    to="/addproduct"
+                    to="/admin/addproduct"
                     type="button"
                     className="text-white text-[0.9rem] bg-[#03A9F4] px-4 py-2 rounded-md"
                   >
@@ -131,7 +131,7 @@ const Products = () => {
                               />
                               <div className="min-w-0 admin-products-meta">
                                 <Link
-                                  to={`/product_detail/${item._id}`}
+                                  to={`/admin/product_detail/${item._id}`}
                                   className="fw-semibold d-block admin-products-name"
                                 >
                                   {item.name}
@@ -195,7 +195,7 @@ const Products = () => {
                                 title="View"
                               >
                                 <Link
-                                  to={`/product_detail/${item._id}`}
+                                  to={`/admin/product_detail/${item._id}`}
                                   className="text-primary d-inline-block"
                                 >
                                   <i className="ri-eye-fill fs-16" />
@@ -203,7 +203,7 @@ const Products = () => {
                               </li>
                               <li className="list-inline-item edit">
                                 <Link
-                                  to={`/uppdateproduct/${item._id}`}
+                                  to={`/admin/uppdateproduct/${item._id}`}
                                   data-bs-toggle="modal"
                                   className="text-primary d-inline-block edit-item-btn"
                                 >

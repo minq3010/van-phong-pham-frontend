@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { getStoredToken, getStoredUser, isStoredTokenExpired } from "../utils/auth";
 
 const ClientPrivateRouter = ({ children }) => {
@@ -10,10 +10,10 @@ const ClientPrivateRouter = ({ children }) => {
   }
 
   if (user?.role === "admin" || user?.role === "manage") {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
-  return <>{children}</>;
+  return children || <Outlet />;
 };
 
 export default ClientPrivateRouter;

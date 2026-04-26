@@ -420,7 +420,7 @@ const Dashboards = () => {
                               <h5 className="fs-14 my-1">
                                 {item?.is_available ? (
                                   <Link
-                                    to={`/product_detail/${item.id}`}
+                                    to={`/admin/product_detail/${item.id}`}
                                     className="text-reset"
                                   >
                                     {item?.product_name?.length > 20
@@ -469,14 +469,14 @@ const Dashboards = () => {
                           {item?.is_available ? (
                             <div className="d-inline-flex align-items-center gap-2">
                               <Link
-                                to={`/product_detail/${item.id}`}
+                                to={`/admin/product_detail/${item.id}`}
                                 className="text-primary d-inline-block"
                                 title="Xem"
                               >
                                 <i className="ri-eye-fill fs-16" />
                               </Link>
                               <Link
-                                to={`/uppdateproduct/${item.id}`}
+                                to={`/admin/uppdateproduct/${item.id}`}
                                 className="text-info d-inline-block"
                                 title="Sửa"
                               >

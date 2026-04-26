@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "react-query";
 import { message } from "antd";
 import logo from "../../assets/images/logo.png";
 import { askClientChatbot, getClientCart, logout } from "../../Apis/Api.jsx";
-import { clearStoredAuth, getStoredUser } from "../../utils/auth";
+import { clearStoredAuth, getStoredToken, getStoredUser, isStoredTokenExpired } from "../../utils/auth";
 import ClientFooter from "../components/layout/Footer.jsx";
 
 const navLinkClass = ({ isActive }) =>
@@ -16,6 +16,13 @@ const navLinkClass = ({ isActive }) =>
 const ClientLayout = () => {
   const navigate = useNavigate();
   const user = getStoredUser();
+  const token = getStoredToken();
+  const isAuthenticated =
+    Boolean(token) &&
+    Boolean(user) &&
+    !isStoredTokenExpired() &&
+    user?.role !== "admin" &&
+    user?.role !== "manage";
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const chatInputRef = useRef(null);
@@ -30,6 +37,7 @@ const ClientLayout = () => {
 
   const { data: cartData } = useQuery(["client-cart-count"], getClientCart, {
     staleTime: 30000,
+    enabled: isAuthenticated,
   });
 
   const cartCount = useMemo(() => {
@@ -128,21 +136,21 @@ const ClientLayout = () => {
 
             <div className="flex items-center gap-2">
               <Link
-                to="/client/profile"
+                to={isAuthenticated ? "/client/profile" : "/signin"}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Hồ sơ"
               >
                 <i className="fa-regular fa-user text-sm" />
               </Link>
               <Link
-                to="/client/orders"
+                to={isAuthenticated ? "/client/orders" : "/signin"}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Đơn hàng"
               >
                 <i className="fa-solid fa-box text-sm" />
               </Link>
               <Link
-                to="/client/cart"
+                to={isAuthenticated ? "/client/cart" : "/signin"}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Giỏ hàng"
               >
@@ -154,20 +162,29 @@ const ClientLayout = () => {
                 )}
               </Link>
               <Link
-                to="/client/wishlist"
+                to={isAuthenticated ? "/client/wishlist" : "/signin"}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Yêu thích"
               >
                 <i className="fa-regular fa-heart text-sm" />
               </Link>
 
-              <button
-                type="button"
-                className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
-                onClick={handleLogout}
-              >
-                Đăng xuất
-              </button>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+                  onClick={handleLogout}
+                >
+                  Đăng xuất
+                </button>
+              ) : (
+                <Link
+                  to="/signin"
+                  className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+                >
+                  Đăng nhập
+                </Link>
+              )}
             </div>
           </div>
 
@@ -176,16 +193,16 @@ const ClientLayout = () => {
               <NavLink to="/client/products" className={navLinkClass}>
                 Sản phẩm
               </NavLink>
-              <NavLink to="/client/cart" className={navLinkClass}>
+              <NavLink to={isAuthenticated ? "/client/cart" : "/signin"} className={navLinkClass}>
                 Giỏ hàng
               </NavLink>
-              <NavLink to="/client/orders" className={navLinkClass}>
+              <NavLink to={isAuthenticated ? "/client/orders" : "/signin"} className={navLinkClass}>
                 Đơn hàng của tôi
               </NavLink>
-              <NavLink to="/client/wishlist" className={navLinkClass}>
+              <NavLink to={isAuthenticated ? "/client/wishlist" : "/signin"} className={navLinkClass}>
                 Wishlist
               </NavLink>
-              <NavLink to="/client/profile" className={navLinkClass}>
+              <NavLink to={isAuthenticated ? "/client/profile" : "/signin"} className={navLinkClass}>
                 Tài khoản
               </NavLink>
             </nav>

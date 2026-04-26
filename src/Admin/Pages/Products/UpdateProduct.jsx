@@ -154,7 +154,7 @@ const UpdateProduct = () => {
       }
 
       message.success("Cập nhật sản phẩm thành công!");
-      navigate("/products");
+      navigate("/admin/products");
     },
     onError: (error) => {
       const errorMessage =
@@ -546,7 +546,7 @@ const UpdateProduct = () => {
             style={{ boxShadow: "rgb(209, 209, 209) 0px 0px 4px 1px" }}
           >
             <Link
-              to="/products"
+              to="/admin/products"
               className="py-2 px-6 bg-white border-2 border-[#EBEBEB] rounded-lg text-black hover:bg-gray-50"
             >
               Hủy

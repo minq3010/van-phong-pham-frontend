@@ -2,7 +2,8 @@ import { getStoredUser, getStoredToken } from "../utils/auth";
 
 const useAuth = () => {
   const token = typeof window !== "undefined" ? getStoredToken() : null;
-  const data = typeof window !== "undefined" ? getStoredUser() : null;
+  const rawUser = typeof window !== "undefined" ? getStoredUser() : null;
+  const data = rawUser ? { ...rawUser, id: rawUser.id ?? rawUser._id } : null;
 
   return {
     data,

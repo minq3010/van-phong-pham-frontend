@@ -44,7 +44,7 @@ const CommentListProduct = () => {
                   <tbody className="list form-check-all">
                     {comments?.length > 0 ? (
                       comments.map((item, index) => (
-                        <tr key={item.id}>
+                        <tr key={item.productId}>
                           <td>{index + 1}</td>
                           <td>
                             <img
@@ -85,7 +85,7 @@ const CommentListProduct = () => {
                             <ul className="list-inline hstack gap-2 mb-0">
                               <li className="list-inline-item">
                                 <Link
-                                  to={`/commentdetail/${item.productId}`}
+                                  to={`/admin/commentdetail/${item.productId}`}
                                   className="text-primary d-inline-block"
                                 >
                                   <i className="ri-eye-fill fs-16" />

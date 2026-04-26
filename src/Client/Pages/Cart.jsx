@@ -3,13 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "react-query";
 import { message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  getVouchers,
+  getClientVouchers,
   getClientCart,
   removeClientCartItem,
   updateClientCartItem,
 } from "../../Apis/Api.jsx";
 import { formatCurrency } from "../utils/format";
 import Breadcrumb from "../components/navigation/Breadcrumb.jsx";
+import { calculateVoucherDiscount } from "../../utils/voucher.js";
 
 const ClientCart = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const ClientCart = () => {
   const [appliedVoucher, setAppliedVoucher] = useState(null);
 
   const { data, isLoading } = useQuery(["client-cart"], getClientCart);
-  const { data: voucherResponse } = useQuery(["client-vouchers"], getVouchers);
+  const { data: voucherResponse } = useQuery(["client-vouchers"], getClientVouchers);
 
   const refreshCart = () => {
     queryClient.invalidateQueries(["client-cart"]);
@@ -46,18 +47,14 @@ const ClientCart = () => {
 
   const cartItems = Array.isArray(data?.data) ? data.data : [];
   const totalPrice = data?.totalPrice || 0;
-  const vouchers = Array.isArray(voucherResponse?.data) ? voucherResponse.data : [];
+  const vouchers = Array.isArray(voucherResponse)
+    ? voucherResponse
+    : Array.isArray(voucherResponse?.data)
+      ? voucherResponse.data
+      : [];
 
   const discountAmount = useMemo(() => {
-    if (!appliedVoucher) {
-      return 0;
-    }
-
-    const calculatedDiscount = Math.round(
-      (Number(totalPrice) * Number(appliedVoucher.discount || 0)) / 100
-    );
-
-    return Math.min(calculatedDiscount, Number(appliedVoucher.maxPriceDis || calculatedDiscount));
+    return calculateVoucherDiscount(appliedVoucher, totalPrice);
   }, [appliedVoucher, totalPrice]);
 
   const finalTotal = Math.max(0, Number(totalPrice) - discountAmount);

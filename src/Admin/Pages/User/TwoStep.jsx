@@ -3,15 +3,23 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "react-query";
 import { z } from "zod";
-import { resetpassword, verifytoken } from "../../../Apis/Api";
+import { emailPassword, resetpassword, verifytoken } from "../../../Apis/Api";
 import { Spin, message } from "antd";
 import { useNavigate } from "react-router-dom";
 const TwoStep = () => {
   const [checkToken, setcheckToken] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState();
+  const [email, setEmail] = useState("");
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+
+  const emailSchema = z.object({
+    email: z
+      .string()
+      .min(1, "Email is required")
+      .email("Must be a valid email"),
+  });
   const schema = z.object({
     opt1: z
       .string()
@@ -49,22 +57,54 @@ const TwoStep = () => {
       .min(8, "ConfimPassword must be more than 8 characters")
       .max(32, "ConfimPassword must be less than 32 characters"),
   });
+
+  const {
+    register: registerEmail,
+    formState: { errors: emailErrors },
+    handleSubmit: handleSubmitEmail,
+  } = useForm({
+    resolver: zodResolver(emailSchema),
+  });
+
   const {
     register,
     formState: { errors },
     handleSubmit,
   } = useForm({
-    resolver: zodResolver(checkToken ? schema1 : schema),
+    resolver: zodResolver(schema),
   });
+
+  const {
+    register: registerReset,
+    formState: { errors: resetErrors },
+    handleSubmit: handleSubmitReset,
+  } = useForm({
+    resolver: zodResolver(schema1),
+  });
+
+  const { mutate: sendOtp, isLoading: isSendingOtp } = useMutation({
+    mutationFn: (payload) => emailPassword(payload),
+    onSuccess: (data, variables) => {
+      message.success(data.message || "Đã gửi mã xác nhận");
+      setEmail(variables.email);
+      setOtpSent(true);
+    },
+    onError: (err) => {
+      message.error(err?.response?.data?.message || "Gửi mã thất bại");
+    },
+  });
+
   const { mutate, isLoading } = useMutation({
     mutationFn: (data) => verifytoken(data),
     onSuccess: (data) => {
       message.success(data.message);
-      setEmail(data.email);
+      if (data?.email) {
+        setEmail(data.email);
+      }
       setcheckToken(data.success);
     },
     onError: (errors) => {
-      message.success(errors.response.data.message);
+      message.error(errors?.response?.data?.message || "Xác minh thất bại");
     },
   });
   const { mutate: resetPassword, isLoading: isresetPassword } = useMutation({
@@ -74,14 +114,17 @@ const TwoStep = () => {
       navigate("/signin");
     },
     onError: (errors) => {
-      message.success(errors.response.data.message);
+      message.error(errors?.response?.data?.message || "Đổi mật khẩu thất bại");
     },
   });
+  const onSubmitEmail = (value) => {
+    sendOtp({ email: value.email });
+  };
   const onSubmit = (value) => {
     const otp = {
       otp: Object.values(value).join(""),
     };
-    mutate(otp);
+    mutate({ ...otp, email });
   };
   const onSubmitPassword = (value) => {
     const data = {
@@ -96,7 +139,7 @@ const TwoStep = () => {
       {checkToken ? (
         <div className="m-t-200 container d-flex justify-content-center m-b-100">
           <form
-            onSubmit={handleSubmit(onSubmitPassword)}
+            onSubmit={handleSubmitReset(onSubmitPassword)}
             className="d-flex flex-column  pos-relative"
             style={{
               boxShadow: "0 3px 10px 0 rgba(0,0,0,.14)",
@@ -122,9 +165,9 @@ const TwoStep = () => {
                 <input
                   type={`${showPassword ? "text" : "password"}`}
                   className="input-user"
-                  disabled={isLoading}
+                  disabled={isresetPassword}
                   id="passwords"
-                  {...register("password")}
+                  {...registerReset("password")}
                   placeholder="Enter your Password"
                 />
                 <div
@@ -136,9 +179,9 @@ const TwoStep = () => {
                   />
                 </div>
               </div>
-              {errors.password?.message && (
+              {resetErrors.password?.message && (
                 <p id="password-error" className="text-red-400">
-                  {errors.password.message}
+                  {resetErrors.password.message}
                 </p>
               )}
               <div className="flex justify-start flex-column my-2">
@@ -148,11 +191,11 @@ const TwoStep = () => {
                 <i className="fa fa-lock" />
                 <input
                   type={`${showConfirmPassword ? "text" : "password"}`}
-                  disabled={isLoading}
+                  disabled={isresetPassword}
                   className={`input-user }`} // Optional: add error class
                   placeholder="Enter your Confirm Password"
-                  {...register("password_confirmation")}
-                  aria-invalid={errors.password_confirmation ? "true" : "false"} // Accessibility enhancement
+                  {...registerReset("password_confirmation")}
+                  aria-invalid={resetErrors.password_confirmation ? "true" : "false"} // Accessibility enhancement
                   aria-describedby="-error" // Links to error message if present
                 />
                 <div
@@ -164,9 +207,9 @@ const TwoStep = () => {
                   />
                 </div>
               </div>
-              {errors.password_confirmation?.message && (
+              {resetErrors.password_confirmation?.message && (
                 <p id="-error" className="text-red-400">
-                  {errors.password_confirmation.message}
+                  {resetErrors.password_confirmation.message}
                 </p>
               )}
             </div>
@@ -176,6 +219,42 @@ const TwoStep = () => {
               style={{ width: "240px", height: 40 }}
             >
               {isresetPassword ? <Spin /> : ""} SUBMIT
+            </button>
+          </form>
+        </div>
+      ) : !otpSent ? (
+        <div className="m-t-200 container d-flex justify-content-center m-b-100">
+          <form
+            onSubmit={handleSubmitEmail(onSubmitEmail)}
+            className="d-flex flex-column pos-relative"
+            style={{
+              boxShadow: "0 3px 10px 0 rgba(0,0,0,.14)",
+              width: 500,
+              padding: 24,
+            }}
+          >
+            <h4 className="m-b-20 text-[1.6rem] font-medium text-center">
+              Forgot Password
+            </h4>
+            <div className="mb-3">
+              <label className="mb-1">Email</label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="Enter your email"
+                disabled={isSendingOtp}
+                {...registerEmail("email")}
+              />
+              {emailErrors.email?.message && (
+                <p className="text-red-400 mt-1">{emailErrors.email.message}</p>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="btn btn-success w-100"
+              disabled={isSendingOtp}
+            >
+              {isSendingOtp ? <Spin /> : ""} Send Code
             </button>
           </form>
         </div>
@@ -207,7 +286,7 @@ const TwoStep = () => {
                           <h4>Verify Your Email</h4>
                           <p>
                             Please enter the 4 digit code sent to{" "}
-                            <span className="fw-semibold">example@abc.com</span>
+                            <span className="fw-semibold">{email}</span>
                           </p>
                         </div>
                         <form onSubmit={handleSubmit(onSubmit)}>
@@ -261,8 +340,14 @@ const TwoStep = () => {
                     <p className="mb-0">
                       Didn't receive a code ?{" "}
                       <a
-                        href="auth-pass-reset-basic.html"
+                        href="#"
                         className="fw-semibold text-primary text-decoration-underline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (email) {
+                            sendOtp({ email });
+                          }
+                        }}
                       >
                         Resend
                       </a>{" "}

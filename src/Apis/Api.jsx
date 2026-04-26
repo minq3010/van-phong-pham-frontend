@@ -178,7 +178,7 @@ export const dashboard = async (startDate, endDate) => {
   }
 };
 export const emailPassword = async (data) => {
-  const res = await Axios.post(`/forgot-password`, data);
+  const res = await Axios.post(`/forgot`, data);
   return res.data;
 };
 export const verifytoken = async (data) => {
@@ -186,9 +186,7 @@ export const verifytoken = async (data) => {
   return res.data;
 };
 export const resetpassword = async (data) => {
-  const token = data?.token;
-  const payload = token ? { ...data, token: undefined } : data;
-  const res = await Axios.post(`/reset-password/${token}`, payload);
+  const res = await Axios.post(`/reset-password`, data);
   return res.data;
 };
 
@@ -197,8 +195,19 @@ export const getVouchers = async () => {
   return res.data;
 };
 
+export const getClientVouchers = async () => {
+  const res = await Axios.get(`/vouchers-public`);
+  return res.data;
+};
+
 export const getVoucherDetail = async (id) => {
-  const res = await Axios.get(`/vouchers/${id}`);
+  const res = await Axios.get(`/voucher/${id}`);
+  return res.data;
+};
+
+// Used by profile hooks
+export const updateUser = async (data, id) => {
+  const res = await Axios.patch(`/user/${id}`, data);
   return res.data;
 };
 
@@ -223,6 +232,16 @@ export const getComments = async () => {
 };
 export const getCommentDetail = async (id) => {
   const res = await Axios.get(`/comment/${id}`);
+  return res.data;
+};
+
+export const getProductComments = async (productId) => {
+  const res = await Axios.get(`/comment/product/${productId}`);
+  return res.data;
+};
+
+export const createProductComment = async (data) => {
+  const res = await Axios.post(`/comment`, data);
   return res.data;
 };
 

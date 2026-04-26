@@ -11,7 +11,7 @@ const Emptys = () => {
         className="flex flex-col items-center"
         description={<Typography.Text>No data</Typography.Text>}
       >
-        <Button type="primary" onClick={() => navigate("/addproduct")}>
+        <Button type="primary" onClick={() => navigate("/admin/addproduct")}>
           Add Product
         </Button>
       </Empty>

@@ -2,9 +2,15 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { message } from "antd";
-import { addToClientCart, DetailProduct } from "../../Apis/Api.jsx";
+import {
+  addToClientCart,
+  createProductComment,
+  DetailProduct,
+  getProductComments,
+} from "../../Apis/Api.jsx";
 import Breadcrumb from "../components/navigation/Breadcrumb.jsx";
 import { formatCurrency } from "../utils/format";
+import { getStoredUser } from "../../utils/auth";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -15,12 +21,20 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [reviewInput, setReviewInput] = useState("");
   const [wishlistVersion, setWishlistVersion] = useState(0);
+  const currentUser = getStoredUser();
 
   const { data, isLoading } = useQuery(["client-product-detail", id], () => DetailProduct(id), {
     enabled: Boolean(id),
   });
 
   const product = data?.data;
+  const { data: reviewResponse = [] } = useQuery(
+    ["client-product-comments", id],
+    () => getProductComments(id),
+    {
+      enabled: Boolean(id),
+    }
+  );
 
   const gallery = useMemo(() => {
     if (!product) {
@@ -57,7 +71,6 @@ const ProductDetail = () => {
   const currentStock = Number(selectedVariant?.quantity ?? product?.quantity ?? 0);
   const currentPrice = Number(selectedVariant?.price ?? product?.price ?? 0);
 
-  const reviewsKey = `client_reviews_${id}`;
   const wishlistIds = useMemo(() => {
     try {
       const raw = localStorage.getItem("client_wishlist");
@@ -67,14 +80,7 @@ const ProductDetail = () => {
     }
   }, [wishlistVersion]);
   const isWishlist = wishlistIds.includes(id);
-  const reviews = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(reviewsKey);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  }, [reviewsKey]);
+  const reviews = Array.isArray(reviewResponse) ? reviewResponse : [];
 
   const { mutate: addCart, isLoading: addingCart } = useMutation({
     mutationFn: addToClientCart,
@@ -85,6 +91,18 @@ const ProductDetail = () => {
     },
     onError: (error) => {
       message.error(error?.response?.data?.message || "Không thể thêm vào giỏ hàng");
+    },
+  });
+
+  const { mutate: submitReview, isLoading: isSubmittingReview } = useMutation({
+    mutationFn: createProductComment,
+    onSuccess: () => {
+      message.success("Đã gửi đánh giá");
+      setReviewInput("");
+      queryClient.invalidateQueries(["client-product-comments", id]);
+    },
+    onError: (error) => {
+      message.error(error?.response?.data?.message || "Không thể gửi đánh giá");
     },
   });
 
@@ -108,19 +126,17 @@ const ProductDetail = () => {
       return;
     }
 
-    const nextReviews = [
-      {
-        id: Date.now(),
-        content: reviewInput.trim(),
-        createdAt: new Date().toISOString(),
-      },
-      ...reviews,
-    ];
+    if (!currentUser?._id) {
+      message.error("Bạn cần đăng nhập để gửi đánh giá");
+      return;
+    }
 
-    localStorage.setItem(reviewsKey, JSON.stringify(nextReviews));
-    setReviewInput("");
-    message.success("Đã gửi đánh giá");
-    window.location.reload();
+    submitReview({
+      userId: currentUser._id,
+      productId: id,
+      content: reviewInput.trim(),
+      displayName: currentUser.username || "",
+    });
   };
 
   const handleToggleWishlist = () => {
@@ -266,9 +282,9 @@ const ProductDetail = () => {
               <p className="text-sm text-slate-500">Chưa có đánh giá nào, hãy là người đầu tiên đánh giá sản phẩm.</p>
             ) : (
               reviews.map((review) => (
-                <div key={review.id} className="rounded-lg border p-3 text-sm text-slate-700">
+                <div key={review._id} className="rounded-lg border p-3 text-sm text-slate-700">
                   <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
-                    <span>Khách hàng</span>
+                    <span>{review.displayName || review.userId?.username || "Khách hàng"}</span>
                     <span>{new Date(review.createdAt).toLocaleString("vi-VN")}</span>
                   </div>
                   <p>{review.content}</p>
@@ -279,20 +295,36 @@ const ProductDetail = () => {
 
           <div className="mt-4 space-y-2">
             <label className="text-sm font-semibold text-slate-700">Viết review</label>
-            <textarea
-              value={reviewInput}
-              onChange={(event) => setReviewInput(event.target.value)}
-              rows={3}
-              className="w-full rounded-md border px-3 py-2 outline-none focus:border-slate-500"
-              placeholder="Chia sẻ trải nghiệm của bạn..."
-            />
-            <button
-              type="button"
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-              onClick={handleSubmitReview}
-            >
-              Gửi đánh giá
-            </button>
+            {currentUser?._id ? (
+              <>
+                <textarea
+                  value={reviewInput}
+                  onChange={(event) => setReviewInput(event.target.value)}
+                  rows={3}
+                  className="w-full rounded-md border px-3 py-2 outline-none focus:border-slate-500"
+                  placeholder="Chia sẻ trải nghiệm của bạn..."
+                />
+                <button
+                  type="button"
+                  disabled={isSubmittingReview}
+                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  onClick={handleSubmitReview}
+                >
+                  {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                </button>
+              </>
+            ) : (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                Bạn cần đăng nhập để gửi đánh giá.
+                <button
+                  type="button"
+                  className="ml-2 font-semibold underline"
+                  onClick={() => navigate("/signin")}
+                >
+                  Đăng nhập ngay
+                </button>
+              </div>
+            )}
           </div>
         </article>
 

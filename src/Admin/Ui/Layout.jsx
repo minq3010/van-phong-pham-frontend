@@ -123,43 +123,43 @@ const Layout = () => {
   const displayName = data?.username || "Tài khoản";
   const menuItems = [
     {
-      to: "",
+      to: "/admin",
       match: "Dashboards",
       icon: "ri-bar-chart-box-line",
       label: "Thống kê",
     },
     {
-      to: "/products",
+      to: "/admin/products",
       match: "Products",
       icon: "ri-shopping-bag-3-line",
       label: "Sản phẩm",
     },
     {
-      to: "/order",
+      to: "/admin/order",
       match: "Order",
       icon: "ri-file-list-3-line",
       label: "Đơn hàng",
     },
     {
-      to: "/wholesale-orders",
+      to: "/admin/wholesale-orders",
       match: "Wholesale-orders",
       icon: "ri-hand-coin-line",
       label: "Bán sỉ",
     },
     {
-      to: "/categories",
+      to: "/admin/categories",
       match: "Categories",
       icon: "ri-folders-line",
       label: "Danh mục",
     },
     {
-      to: "/voucher",
+      to: "/admin/voucher",
       match: "Voucher",
       icon: "ri-coupon-3-line",
       label: "Mã giảm giá",
     },
     {
-      to: "/comment",
+      to: "/admin/comment",
       match: "Comment",
       icon: "ri-chat-1-line",
       label: "Đánh giá",
@@ -167,7 +167,7 @@ const Layout = () => {
     ...(data?.role === "manage"
       ? [
           {
-            to: "admins",
+            to: "/admin/admins",
             match: "Admins",
             icon: "ri-user-settings-line",
             label: "Tài khoản Admin",
@@ -311,7 +311,7 @@ const Layout = () => {
                       <h6 className="dropdown-header">
                         Welcome {displayName}
                       </h6>
-                      <Link className="dropdown-item" to={"/profile"}>
+                      <Link className="dropdown-item" to={"/admin/profile"}>
                         <i className="mdi mdi-account-circle text-muted fs-16 align-middle me-1" />
                         <span className="align-middle">Profile</span>
                       </Link>

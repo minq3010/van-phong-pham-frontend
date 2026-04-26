@@ -52,7 +52,7 @@ const PrivateRouter = (props) => {
   }
 
   if (!ALLOWED_ROLES.includes(user?.role)) {
-    return <Navigate to="/client/products" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (user?.mustChangePassword && location.pathname !== "/force-change-password") {
