@@ -8,6 +8,7 @@ import {
   removeClientCartItem,
   updateClientCartItem,
 } from "../../Apis/Api.jsx";
+import { getStoredToken, getStoredUser, isStoredTokenExpired } from "../../utils/auth";
 import { formatCurrency } from "../utils/format";
 import Breadcrumb from "../components/navigation/Breadcrumb.jsx";
 import { calculateVoucherDiscount } from "../../utils/voucher.js";
@@ -215,7 +216,20 @@ const ClientCart = () => {
           type="button"
           disabled={cartItems.length === 0}
           className="w-full rounded-md bg-orange-500 px-4 py-2 font-medium text-white hover:bg-orange-600 disabled:opacity-50"
-          onClick={() => navigate("/client/checkout", { state: { voucherId: appliedVoucher?._id || null } })}
+          onClick={() => {
+            const token = getStoredToken();
+            const user = getStoredUser();
+            const isExpired = isStoredTokenExpired();
+            const isAuthenticated = Boolean(token && user && !isExpired);
+
+            if (!isAuthenticated) {
+              message.info("Vui lòng đăng nhập để tiếp tục thanh toán");
+              navigate("/signin", { replace: true });
+              return;
+            }
+
+            navigate("/client/checkout", { state: { voucherId: appliedVoucher?._id || null } });
+          }}
         >
           Thanh toán
         </button>

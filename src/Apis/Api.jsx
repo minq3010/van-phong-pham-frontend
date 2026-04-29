@@ -1,5 +1,50 @@
 import Axios from "./Axios";
 import { getStoredToken, getStoredUser } from "../utils/auth";
+
+const GUEST_CART_KEY = "guest_cart";
+
+const parseGuestCart = (raw) => {
+  try {
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getGuestCartItems = () => {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  return parseGuestCart(window.localStorage.getItem(GUEST_CART_KEY));
+};
+
+const saveGuestCartItems = (items) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(GUEST_CART_KEY, JSON.stringify(Array.isArray(items) ? items : []));
+};
+
+const normalizeCartProduct = (product) => ({
+  _id: product._id,
+  name: product.name,
+  price: Number(product.price || 0),
+  imageUrl: product.imageUrl || "",
+});
+
+const getGuestCartResponse = (items) => {
+  const data = Array.isArray(items) ? items : [];
+  const totalPrice = data.reduce(
+    (sum, item) => sum + Number(item.quantity || 0) * Number(item.product?.price || 0),
+    0
+  );
+
+  return { data, totalPrice };
+};
+
 export const getProducts = async (page, filters = {}) => {
   const params = new URLSearchParams();
   if (filters.price) params.append("price", filters.price);
@@ -261,42 +306,127 @@ export const getClientProducts = async () => {
 };
 
 export const getClientCart = async () => {
-  const userId = getRequiredUserId();
-  const res = await Axios.get(`/cart/${userId}`);
-  return res.data;
+  const user = getStoredUser();
+
+  if (user?._id) {
+    const res = await Axios.get(`/cart/${user._id}`);
+    return res.data;
+  }
+
+  return getGuestCartResponse(getGuestCartItems());
 };
 
-export const addToClientCart = async ({ productId, quantity = 1, color = "Mặc định" }) => {
-  const userId = getRequiredUserId();
-  const res = await Axios.post(`/cart/${userId}`, {
-    productid: productId,
-    quantity,
-    color,
-  });
-  return res.data;
+export const addToClientCart = async ({ productId, quantity = 1, color = "Mặc định", size, product }) => {
+  const user = getStoredUser();
+
+  if (user?._id) {
+    const res = await Axios.post(`/cart/${user._id}`, {
+      productid: productId,
+      quantity,
+      color,
+      size,
+    });
+    return res.data;
+  }
+
+  let itemProduct = product;
+  if (!itemProduct) {
+    const response = await DetailProduct(productId);
+    itemProduct = response?.data;
+  }
+
+  if (!itemProduct?._id) {
+    throw new Error("Không tìm thấy sản phẩm để thêm giỏ hàng");
+  }
+
+  const normalizedColor = String(color || "Mặc định").trim() || "Mặc định";
+  const normalizedQuantity = Math.max(1, Number(quantity || 1));
+  const guestItemId = `guest-${productId}-${normalizedColor}`.replace(/\s+/g, "-");
+  const guestItems = getGuestCartItems();
+  const existingIndex = guestItems.findIndex((item) => item._id === guestItemId);
+  const cartProduct = normalizeCartProduct(itemProduct);
+
+  if (existingIndex >= 0) {
+    guestItems[existingIndex].quantity = Number(guestItems[existingIndex].quantity || 0) + normalizedQuantity;
+    saveGuestCartItems(guestItems);
+    return { message: "Thêm thành công", data: guestItems[existingIndex] };
+  }
+
+  const newItem = {
+    _id: guestItemId,
+    product: cartProduct,
+    quantity: normalizedQuantity,
+    color: normalizedColor,
+    size: size || undefined,
+    isGuest: true,
+  };
+
+  guestItems.push(newItem);
+  saveGuestCartItems(guestItems);
+  return { message: "Thêm thành công", data: newItem };
 };
 
 export const updateClientCartItem = async ({ cartItemId, quantity }) => {
-  const res = await Axios.patch(`/cart/${cartItemId}`, { quantity });
-  return res.data;
+  const user = getStoredUser();
+
+  if (user?._id) {
+    const res = await Axios.patch(`/cart/${cartItemId}`, { quantity });
+    return res.data;
+  }
+
+  const guestItems = getGuestCartItems();
+  const itemIndex = guestItems.findIndex((item) => item._id === cartItemId);
+
+  if (itemIndex === -1) {
+    throw new Error("Không tìm thấy sản phẩm trong giỏ hàng");
+  }
+
+  const normalizedQuantity = Number(quantity);
+  if (!Number.isFinite(normalizedQuantity) || normalizedQuantity < 0) {
+    throw new Error("Số lượng không hợp lệ");
+  }
+
+  if (normalizedQuantity <= 0) {
+    guestItems.splice(itemIndex, 1);
+  } else {
+    guestItems[itemIndex].quantity = normalizedQuantity;
+  }
+
+  saveGuestCartItems(guestItems);
+  return { message: "Cập nhật thành công", data: guestItems[itemIndex] || null };
 };
 
 export const removeClientCartItem = async (cartItemId) => {
-  const res = await Axios.delete(`/cart/${cartItemId}`);
-  return res.data;
+  const user = getStoredUser();
+
+  if (user?._id) {
+    const res = await Axios.delete(`/cart/${cartItemId}`);
+    return res.data;
+  }
+
+  const guestItems = getGuestCartItems();
+  const nextItems = guestItems.filter((item) => item._id !== cartItemId);
+  saveGuestCartItems(nextItems);
+  return { message: "Xóa thành công" };
 };
 
 export const clearClientCart = async () => {
-  const userId = getRequiredUserId();
-  const res = await Axios.delete(`/carts/${userId}`);
-  return res.data;
+  const user = getStoredUser();
+
+  if (user?._id) {
+    const res = await Axios.delete(`/carts/${user._id}`);
+    return res.data;
+  }
+
+  saveGuestCartItems([]);
+  return { message: "Xóa thành công" };
 };
 
 export const createClientOrder = async (payload) => {
-  const user = getStoredUser();
+  const userId = getRequiredUserId();
   const res = await Axios.post(`/order`, {
     ...payload,
-    userId: user?._id || null,
+    userId,
   });
   return res.data;
 };
@@ -308,8 +438,13 @@ export const getClientOrders = async () => {
 };
 
 export const getClientProfile = async () => {
-  const userId = getRequiredUserId();
-  const res = await Axios.get(`/user/${userId}`);
+  const user = getStoredUser();
+
+  if (!user?._id) {
+    return {};
+  }
+
+  const res = await Axios.get(`/user/${user._id}`);
   return res.data;
 };
 

@@ -92,14 +92,8 @@ const Router = () => {
         <Route index element={<Navigate to="products" replace />} />
         <Route path="products" element={<Suspense fallback={<PageSpinner />}><ClientProducts /></Suspense>} />
         <Route path="products/:id" element={<Suspense fallback={<PageSpinner />}><ClientProductDetail /></Suspense>} />
-        <Route
-          element={
-            <ClientPrivateRouter>
-              <></>
-            </ClientPrivateRouter>
-          }
-        >
-          <Route path="cart" element={<Suspense fallback={<PageSpinner />}><ClientCart /></Suspense>} />
+        <Route path="cart" element={<Suspense fallback={<PageSpinner />}><ClientCart /></Suspense>} />
+        <Route element={<ClientPrivateRouter />}>
           <Route path="checkout" element={<Suspense fallback={<PageSpinner />}><ClientCheckout /></Suspense>} />
           <Route path="orders" element={<Suspense fallback={<PageSpinner />}><ClientOrdersHistory /></Suspense>} />
           <Route path="orders/:id" element={<Suspense fallback={<PageSpinner />}><ClientOrderDetail /></Suspense>} />

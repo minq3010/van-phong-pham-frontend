@@ -10,6 +10,7 @@ import {
   getClientProfile,
   getClientVouchers,
 } from "../../Apis/Api.jsx";
+import { getStoredToken, getStoredUser, isStoredTokenExpired } from "../../utils/auth";
 import { formatCurrency } from "../utils/format";
 import Breadcrumb from "../components/navigation/Breadcrumb.jsx";
 import { calculateVoucherDiscount } from "../../utils/voucher.js";
@@ -20,9 +21,27 @@ const ClientCheckout = () => {
   const queryClient = useQueryClient();
   const voucherId = location.state?.voucherId || null;
 
-  const { data: profile } = useQuery(["client-profile-checkout"], getClientProfile);
-  const { data: cartData, isLoading: isCartLoading } = useQuery(["client-cart"], getClientCart);
-  const { data: voucherResponse } = useQuery(["client-vouchers"], getClientVouchers);
+  const token = getStoredToken();
+  const user = getStoredUser();
+  const isExpired = isStoredTokenExpired();
+  const isAuthenticated = Boolean(token && user && !isExpired);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      message.info("Vui lòng đăng nhập để tiếp tục thanh toán");
+      navigate("/signin", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  const { data: profile } = useQuery(["client-profile-checkout"], getClientProfile, {
+    enabled: isAuthenticated,
+  });
+  const { data: cartData, isLoading: isCartLoading } = useQuery(["client-cart"], getClientCart, {
+    enabled: isAuthenticated,
+  });
+  const { data: voucherResponse } = useQuery(["client-vouchers"], getClientVouchers, {
+    enabled: isAuthenticated,
+  });
 
   const cartItems = Array.isArray(cartData?.data) ? cartData.data : [];
 

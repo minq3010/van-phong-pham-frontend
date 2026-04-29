@@ -37,7 +37,6 @@ const ClientLayout = () => {
 
   const { data: cartData } = useQuery(["client-cart-count"], getClientCart, {
     staleTime: 30000,
-    enabled: isAuthenticated,
   });
 
   const cartCount = useMemo(() => {
@@ -150,7 +149,7 @@ const ClientLayout = () => {
                 <i className="fa-solid fa-box text-sm" />
               </Link>
               <Link
-                to={isAuthenticated ? "/client/cart" : "/signin"}
+                to="/client/cart"
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Giỏ hàng"
               >
@@ -193,7 +192,7 @@ const ClientLayout = () => {
               <NavLink to="/client/products" className={navLinkClass}>
                 Sản phẩm
               </NavLink>
-              <NavLink to={isAuthenticated ? "/client/cart" : "/signin"} className={navLinkClass}>
+              <NavLink to="/client/cart" className={navLinkClass}>
                 Giỏ hàng
               </NavLink>
               <NavLink to={isAuthenticated ? "/client/orders" : "/signin"} className={navLinkClass}>

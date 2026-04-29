@@ -112,6 +112,7 @@ const ClientProducts = () => {
       productId: item._id,
       quantity: 1,
       color: defaultColor,
+      product: item,
     });
   };
 

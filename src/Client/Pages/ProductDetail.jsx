@@ -112,7 +112,7 @@ const ProductDetail = () => {
     }
 
     const color = selectedVariant?.color || "Mặc định";
-    addCart({ productId: product._id, quantity, color });
+    addCart({ productId: product._id, product, quantity, color });
   };
 
   const handleBuyNow = () => {
