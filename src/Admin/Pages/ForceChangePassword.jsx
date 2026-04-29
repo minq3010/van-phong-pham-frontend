@@ -21,7 +21,7 @@ const ForceChangePassword = () => {
       const updatedUser = { ...user, mustChangePassword: false };
       localStorage.setItem("user", JSON.stringify(updatedUser));
       message.success("Đổi mật khẩu thành công!");
-      navigate("/admin");
+      navigate("/admin", { replace: true });
     },
     onError: (error) => {
       message.error(error?.response?.data?.message || "Đổi mật khẩu thất bại");

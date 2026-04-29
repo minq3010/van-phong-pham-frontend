@@ -136,6 +136,7 @@ const ClientLayout = () => {
             <div className="flex items-center gap-2">
               <Link
                 to={isAuthenticated ? "/client/profile" : "/signin"}
+                replace={!isAuthenticated}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Hồ sơ"
               >
@@ -143,6 +144,7 @@ const ClientLayout = () => {
               </Link>
               <Link
                 to={isAuthenticated ? "/client/orders" : "/signin"}
+                replace={!isAuthenticated}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Đơn hàng"
               >
@@ -162,6 +164,7 @@ const ClientLayout = () => {
               </Link>
               <Link
                 to={isAuthenticated ? "/client/wishlist" : "/signin"}
+                replace={!isAuthenticated}
                 className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700"
                 title="Yêu thích"
               >
@@ -179,6 +182,7 @@ const ClientLayout = () => {
               ) : (
                 <Link
                   to="/signin"
+                  replace
                   className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
                 >
                   Đăng nhập
@@ -195,13 +199,25 @@ const ClientLayout = () => {
               <NavLink to="/client/cart" className={navLinkClass}>
                 Giỏ hàng
               </NavLink>
-              <NavLink to={isAuthenticated ? "/client/orders" : "/signin"} className={navLinkClass}>
+              <NavLink
+                to={isAuthenticated ? "/client/orders" : "/signin"}
+                replace={!isAuthenticated}
+                className={navLinkClass}
+              >
                 Đơn hàng của tôi
               </NavLink>
-              <NavLink to={isAuthenticated ? "/client/wishlist" : "/signin"} className={navLinkClass}>
+              <NavLink
+                to={isAuthenticated ? "/client/wishlist" : "/signin"}
+                replace={!isAuthenticated}
+                className={navLinkClass}
+              >
                 Wishlist
               </NavLink>
-              <NavLink to={isAuthenticated ? "/client/profile" : "/signin"} className={navLinkClass}>
+              <NavLink
+                to={isAuthenticated ? "/client/profile" : "/signin"}
+                replace={!isAuthenticated}
+                className={navLinkClass}
+              >
                 Tài khoản
               </NavLink>
             </nav>

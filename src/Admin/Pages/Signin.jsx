@@ -49,16 +49,16 @@ const Signin = () => {
 
       if (!ALLOWED_ROLES.includes(authenticatedUser.role)) {
         message.success("Đăng nhập thành công");
-        navigate("/client/products");
+        navigate("/client/products", { replace: true });
         return;
       }
 
       if (response.mustChangePassword) {
         message.warning("Đây là lần đăng nhập đầu tiên. Vui lòng đổi mật khẩu mới!");
-        navigate("/force-change-password");
+        navigate("/force-change-password", { replace: true });
       } else {
         message.success("Thành công");
-        navigate("/admin");
+        navigate("/admin", { replace: true });
       }
     },
     onError: (error) => {

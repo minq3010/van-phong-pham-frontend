@@ -1,4 +1,4 @@
-import { Empty, Modal, Spin } from "antd";
+import { Empty, Modal, Spin, message } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FormatPrice } from "../../../Format";
 import {
@@ -471,6 +471,7 @@ const OrderForm = ({
     setErrors(validationErrors);
 
     if (hasErrorMessages(validationErrors)) {
+      message.error("Vui lòng kiểm tra lại dữ liệu đơn hàng trước khi tạo đơn.");
       return;
     }
 
@@ -540,7 +541,13 @@ const OrderForm = ({
   }
 
   return (
-    <div className="admin-order-modal-shell">
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        handleSubmit();
+      }}
+      className="admin-order-modal-shell"
+    >
       <div className="admin-order-modal-hero">
         <div className="admin-order-modal-hero-card">
           <span>Loại khách</span>
@@ -717,9 +724,8 @@ const OrderForm = ({
             {showSubmit && (
               <div className="d-flex justify-content-end mt-3">
                 <button
-                  type="button"
+                  type="submit"
                   className="btn btn-primary"
-                  onClick={handleSubmit}
                   disabled={isCreating}
                 >
                   {isCreating ? "Đang tạo..." : submitLabel}
@@ -1184,7 +1190,7 @@ const OrderForm = ({
           </div>
         </div>
       </Modal>
-    </div>
+    </form>
   );
 };
 

@@ -188,7 +188,7 @@ const Layout = () => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
     message.success("Đăng xuất thành công");
-    nav("/signin");
+    nav("/signin", { replace: true });
   };
 
   const handleSidebarToggle = () => {
