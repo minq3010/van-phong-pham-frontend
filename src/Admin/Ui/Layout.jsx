@@ -164,6 +164,12 @@ const Layout = () => {
       icon: "ri-chat-1-line",
       label: "Đánh giá",
     },
+    {
+      to: "/admin/settings",
+      match: "Settings",
+      icon: "ri-settings-3-line",
+      label: "Cài đặt chung",
+    },
     ...(data?.role === "manage"
       ? [
           {

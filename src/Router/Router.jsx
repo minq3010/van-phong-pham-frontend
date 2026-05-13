@@ -23,6 +23,7 @@ const Categories = lazy(() => import("../Admin/Pages/Categories/Categories.jsx")
 const VoucherList = lazy(() => import("../Admin/Pages/Vouchers/VoucherList.jsx"));
 const CommentList = lazy(() => import("../Admin/Pages/Comment/CommentList.jsx"));
 const CommentListProduct = lazy(() => import("../Admin/Pages/Comment/CommentListProduct.jsx"));
+const Settings = lazy(() => import("../Admin/Pages/Settings/Settings.jsx"));
 const Error = lazy(() => import("../Ui/Error.jsx"));
 const FullScreenButton = lazy(() => import("../Admin/Ui/FullScreen.jsx"));
 const ForceChangePassword = lazy(() => import("../Admin/Pages/ForceChangePassword.jsx"));
@@ -36,6 +37,7 @@ const ClientProfile = lazy(() => import("../Client/Pages/Profile.jsx"));
 const ClientProductDetail = lazy(() => import("../Client/Pages/ProductDetail.jsx"));
 const ClientWishlist = lazy(() => import("../Client/Pages/Wishlist.jsx"));
 const ClientSignup = lazy(() => import("../Client/Pages/Signup.jsx"));
+const ClientPolicyDetail = lazy(() => import("../Client/Pages/PolicyDetail.jsx"));
 
 // Spinner nhỏ dùng cho fallback từng page
 const PageSpinner = () => (
@@ -73,6 +75,7 @@ const Router = () => {
         <Route path="voucher" element={<Suspense fallback={<PageSpinner />}><VoucherList /></Suspense>} />
         <Route path="comment" element={<Suspense fallback={<PageSpinner />}><CommentListProduct /></Suspense>} />
         <Route path="commentdetail/:id" element={<Suspense fallback={<PageSpinner />}><CommentList /></Suspense>} />
+        <Route path="settings" element={<Suspense fallback={<PageSpinner />}><Settings /></Suspense>} />
         <Route path="fullscreen" element={<Suspense fallback={<PageSpinner />}><FullScreenButton /></Suspense>} />
       </Route>
 
@@ -92,6 +95,7 @@ const Router = () => {
         <Route index element={<Navigate to="products" replace />} />
         <Route path="products" element={<Suspense fallback={<PageSpinner />}><ClientProducts /></Suspense>} />
         <Route path="products/:id" element={<Suspense fallback={<PageSpinner />}><ClientProductDetail /></Suspense>} />
+        <Route path="policies/:slug" element={<Suspense fallback={<PageSpinner />}><ClientPolicyDetail /></Suspense>} />
         <Route path="cart" element={<Suspense fallback={<PageSpinner />}><ClientCart /></Suspense>} />
         <Route element={<ClientPrivateRouter />}>
           <Route path="checkout" element={<Suspense fallback={<PageSpinner />}><ClientCheckout /></Suspense>} />
