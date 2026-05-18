@@ -263,12 +263,12 @@ const Orders = () => {
                             <div className="form-check">{index + 1}</div>
                           </th>
                           <td className="id">
-                            <a
-                              href="apps-ecommerce-order-details.html"
+                            <Link
+                              to={`/admin/order_detail/${order._id}`}
                               className="fw-medium link-primary"
                             >
                               {order.madh}
-                            </a>
+                            </Link>
                           </td>
                           <td className="customer_name">
                             {order.customerName}
@@ -310,7 +310,7 @@ const Orders = () => {
                             <ul className="list-inline hstack gap-2 mb-0">
                               <li className="list-inline-item" title="View">
                                 <Link
-                                  to={`/order_detail/${order._id}`}
+                                  to={`/admin/order_detail/${order._id}`}
                                   className="text-primary d-inline-block"
                                 >
                                   <i className="ri-eye-fill fs-16" />

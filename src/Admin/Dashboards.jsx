@@ -531,7 +531,7 @@ const Dashboards = () => {
                       <tr key={index}>
                         <td>
                           <Link
-                            to={`order_detail/${item.id}`}
+                            to={`/admin/order_detail/${item.id}`}
                             className="fw-medium link-primary"
                           >
                             {item.order_code}
