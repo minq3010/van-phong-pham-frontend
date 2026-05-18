@@ -109,7 +109,7 @@ const AdminUsers = () => {
                           className="text-white text-[0.9rem] bg-[#03A9F4] px-4 py-[0.4rem] rounded-md"
                           onClick={() => setBlock(true)}
                         >
-                          <i className="ri-add-line align-bottom" /> Thêm admin
+                          <i className="ri-add-line align-bottom" /> Thêm manager
                         </button>
                       </div>
                     </div>
@@ -170,7 +170,7 @@ const AdminUsers = () => {
                         </td>
                         <td className="role">
                           <span className="text-sm text-uppercase">
-                            {item.role}
+                            {item.role === "admin" ? "manager" : item.role === "manage" ? "admin" : item.role}
                           </span>
                         </td>
                         <td className="text-center">
@@ -226,7 +226,7 @@ const AdminUsers = () => {
                 <div className="modal-content">
                   <div className="modal-header bg-light p-3">
                     <h5 className="modal-title" id="exampleModalLabel">
-                      Thêm admin
+                      Thêm manager
                     </h5>
                     <button
                       type="button"
@@ -241,7 +241,7 @@ const AdminUsers = () => {
                     <div className="modal-body">
                       <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-700">
                         <i className="ri-information-line mr-1" />
-                        Mật khẩu mặc định: <strong>Admin@12345</strong>. Admin sẽ bị bắt buộc đổi mật khẩu khi đăng nhập lần đầu.
+                        Mật khẩu mặc định: <strong>Admin@12345</strong>. Manager sẽ bị bắt buộc đổi mật khẩu khi đăng nhập lần đầu.
                       </div>
                       <div className="mb-3">
                         <label
@@ -254,11 +254,11 @@ const AdminUsers = () => {
                           type="text"
                           id="username-field"
                           className="form-control"
-                          placeholder="Nhập tên admin"
+                          placeholder="Nhập tên manager"
                           {...register("username", { required: true })}
                         />
                         <div className="text-red-500 mt-1">
-                          {errors.username && "Vui lòng nhập tên admin."}
+                          {errors.username && "Vui lòng nhập tên manager."}
                         </div>
                       </div>
                       <div className="mb-3">
@@ -298,7 +298,7 @@ const AdminUsers = () => {
                           className="px-3 py-2 mt-2 rounded-md btn-success"
                           id="add-btn"
                         >
-                          Thêm Admin
+                          Thêm Manager
                         </button>
                       </div>
                     </div>

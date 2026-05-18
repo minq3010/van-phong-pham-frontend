@@ -4,8 +4,8 @@ import { useMutation, useQueryClient } from "react-query";
 import { updateUsers } from "../../Apis/Api";
 
 const roleConfig = {
-  manage: { color: "gold", label: "Manager" },
-  admin: { color: "blue", label: "Admin" },
+  manage: { color: "gold", label: "Admin" },
+  admin: { color: "blue", label: "Manager" },
   user: { color: "green", label: "User" },
 };
 

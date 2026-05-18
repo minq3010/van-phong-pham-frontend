@@ -105,8 +105,8 @@ const Layout = () => {
     str ? str.charAt(0).toUpperCase() + str.slice(1) : "Dashboards";
   const formatRoleLabel = (role) => {
     const roleLabels = {
-      admin: "Admin",
-      manage: "Manager",
+      admin: "Manager",
+      manage: "Admin",
       user: "Người dùng",
     };
 
